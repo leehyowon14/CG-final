@@ -1,0 +1,29 @@
+{
+  "name": "cg-final-game",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "verify:visual": "node scripts/visual-qa.mjs"
+  },
+  "dependencies": {
+    "three": "^0.184.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "@types/node": "^25.9.3",
+    "@types/three": "^0.184.1",
+    "eslint": "^9.29.0",
+    "playwright-core": "^1.61.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
+  }
+}
