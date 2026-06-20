@@ -47,7 +47,7 @@ export class PlayerShip {
     this.group.position.z = THREE.MathUtils.lerp(this.group.position.z, this.anchor.z, 1 - Math.exp(-delta * 0.9));
     this.updateAttitude(delta);
     this.core.rotation.y += delta * 3.2;
-    updateEmissiveForDimension(this.emissiveMaterials, state.dimension, state.giEnabled ? 1.15 : 0.7);
+    updateEmissiveForDimension(this.emissiveMaterials, state.dimension, 0.9);
     this.updateShield(delta, state);
     if (this.hitFlash > 0) {
       this.hitFlash = Math.max(0, this.hitFlash - delta);

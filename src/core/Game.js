@@ -14,7 +14,7 @@ import { PickupSystem } from '../systems/PickupSystem.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js';
 import { DimensionManager } from '../systems/DimensionManager.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
-import { SurfelGIManager } from '../systems/SurfelGIManager.js';
+import { DDGIManager } from '../systems/DDGIManager.js';
 import { HUD } from '../ui/HUD.js';
 import { ParticleBurst } from '../gfx/Particles.js';
 
@@ -36,7 +36,7 @@ export class Game {
     this.pickups = new PickupSystem(this.setup.scene);
     this.dimensionManager = new DimensionManager(this.state);
     this.scoreSystem = new ScoreSystem(this.state);
-    this.surfelGI = new SurfelGIManager(this.setup.scene);
+    this.ddgi = new DDGIManager(this.setup.scene);
     this.particles = new ParticleBurst(this.setup.scene);
     this.collisionSystem = new CollisionSystem(this.state);
     this.hud = new HUD(root, this.state);
@@ -69,7 +69,7 @@ export class Game {
     }
 
     if (this.input.consume('KeyG')) {
-      this.state.surfelDebug = !this.state.surfelDebug;
+      this.state.ddgiDebug = !this.state.ddgiDebug;
     }
 
     if (this.input.consume('KeyH')) {
@@ -84,7 +84,7 @@ export class Game {
     this.environment.update(delta, this.state.dimension);
     this.environmentMap.update(this.state.dimension);
     this.lights.update(this.state.dimension);
-    this.surfelGI.update(delta, this.state);
+    this.ddgi.update(delta, this.state);
 
     if (!this.state.gameOver) {
       this.state.elapsed += delta;
@@ -99,10 +99,9 @@ export class Game {
         enemies: this.enemies,
         obstacles: this.obstacles,
         pickups: this.pickups,
-        surfelGI: this.surfelGI
+        gi: this.ddgi
       });
       this.handleCollisionEvents(collisionEvents);
-      this.player.applyIndirectLight(this.surfelGI.sampleAt(this.player.group.position), this.state.giEnabled);
       this.scoreSystem.update(delta);
     }
 
@@ -132,7 +131,7 @@ export class Game {
     this.enemies.reset();
     this.obstacles.reset();
     this.pickups.reset();
-    this.surfelGI.reset();
+    this.ddgi.reset();
     this.particles.reset();
     this.applyLaunchParams();
   }
@@ -150,8 +149,8 @@ export class Game {
       this.state.dimension = 'phase';
     }
 
-    if (params.get('debug') === 'surfel' || demo === 'gi') {
-      this.state.surfelDebug = true;
+    if (['surfel', 'ddgi'].includes(params.get('debug')) || demo === 'gi') {
+      this.state.ddgiDebug = true;
     }
 
     if (params.get('gi') === 'off') {
@@ -207,6 +206,7 @@ export class Game {
     this.resizeObserver.disconnect();
     this.input.dispose();
     this.hud.dispose();
+    this.ddgi.dispose();
     this.environmentMap.dispose();
     this.setup.renderer.dispose();
     this.root.innerHTML = '';

@@ -8,11 +8,11 @@ export class CollisionSystem {
     this.events = [];
   }
 
-  update({ player, projectiles, enemies, obstacles, pickups, surfelGI }) {
+  update({ player, projectiles, enemies, obstacles, pickups, gi }) {
     this.events = [];
     for (const projectile of [...projectiles.items]) {
       if (projectile.owner === 'player') {
-        this.handlePlayerProjectile(projectile, projectiles, enemies, obstacles, surfelGI);
+        this.handlePlayerProjectile(projectile, projectiles, enemies, obstacles, gi);
       } else if (hbvHit(player.hbv, player.group.position, projectile.mesh.position, projectile.radius)) {
         this.damagePlayer(projectile.damage, projectile.mesh.position, 'enemyProjectile');
         projectiles.remove(projectile);
@@ -58,7 +58,7 @@ export class CollisionSystem {
     });
   }
 
-  handlePlayerProjectile(projectile, projectiles, enemies, obstacles, surfelGI) {
+  handlePlayerProjectile(projectile, projectiles, enemies, obstacles, gi) {
     for (const enemy of [...enemies.items]) {
       if (sphereHit(projectile.mesh.position, projectile.radius, enemy.mesh.position, enemy.radius)) {
         enemy.damage(projectile.damage);
@@ -67,7 +67,7 @@ export class CollisionSystem {
           this.state.kills += 1;
           this.state.combo += 1;
           this.state.addScore(enemy.score + this.state.combo * 12);
-          surfelGI.flash(enemy.mesh.position, this.state.dimensionConfig.color);
+          gi.flash(enemy.mesh.position, this.state.dimensionConfig.color);
           enemies.remove(enemy);
         }
         return;

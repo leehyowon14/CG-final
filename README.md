@@ -2,7 +2,7 @@
 
 Rift Aviator: Dimension Shift 기획 문서 루트입니다.
 
-이 저장소는 기존 TheAviator의 Three.js 기반을 유지하되, Vite + ES modules 구조로 현대화하는 컴퓨터그래픽스 최종 과제용 웹 게임을 목표로 합니다. 현재 구현은 WASD 이동, Space 발사, 1/2/3 차원 전환, 차원 스택, 점수, 적/장애물/아이템, Mini Boss, SurfelGI debug/GI toggle을 포함합니다.
+이 저장소는 기존 TheAviator의 Three.js 기반을 유지하되, Vite + ES modules 구조로 현대화하는 컴퓨터그래픽스 최종 과제용 웹 게임을 목표로 합니다. 현재 구현은 WASD 이동, Space 발사, 1/2/3 차원 전환, 차원 스택, 점수, 적/장애물/아이템, Mini Boss, DDGI debug/GI toggle을 포함합니다.
 
 ## 문서
 

@@ -13,7 +13,7 @@ export class GameState {
     this.gameOver = false;
     this.warning = '';
     this.giEnabled = true;
-    this.surfelDebug = false;
+    this.ddgiDebug = false;
     this.dimensionStacks = GAME_CONFIG.dimension.maxStacks;
     this.dimensionRecharge = 0;
     this.stabilityTime = 0;
@@ -37,7 +37,7 @@ export class GameState {
     this.gameOver = false;
     this.warning = '';
     this.giEnabled = true;
-    this.surfelDebug = false;
+    this.ddgiDebug = false;
     this.dimensionStacks = GAME_CONFIG.dimension.maxStacks;
     this.dimensionRecharge = 0;
     this.stabilityTime = 0;

@@ -110,7 +110,7 @@ try {
   await page.keyboard.press('KeyG');
   await page.waitForTimeout(250);
   await page.screenshot({ path: `${screenshotDir}/08_surfel_debug.png` });
-  checks.push(await checkCanvasNotBlank(page, 'surfel debug canvas nonblank'));
+  checks.push(await checkCanvasNotBlank(page, 'DDGI debug canvas nonblank'));
   await page.keyboard.press('KeyG');
   await page.waitForTimeout(100);
 
@@ -275,9 +275,8 @@ async function playerProjectileCount(page) {
 async function captureCanvasSignature(page) {
   return page.locator('canvas').evaluate((canvas) => {
     const game = window['__RIFT_AVIATOR__'];
-    game.surfelGI.update(0, game.state);
+    game.ddgi.update(0, game.state);
     game.player.update(0, game.input, game.state);
-    game.player.applyIndirectLight(game.surfelGI.sampleAt(game.player.group.position), game.state.giEnabled);
     game.render();
 
     const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
@@ -350,7 +349,7 @@ ${rows}
 - [Space shooting](./screenshots/04_space_shooting.png)
 - [Empty ammo fire block](./screenshots/05_ammo_empty_blocked.png)
 - [Phase](./screenshots/03_phase_dimension.png)
-- [Surfel debug](./screenshots/08_surfel_debug.png)
+- [DDGI debug](./screenshots/08_surfel_debug.png)
 - [GI off](./screenshots/09_gi_off.png)
 - [GI on](./screenshots/10_gi_on.png)
 `;

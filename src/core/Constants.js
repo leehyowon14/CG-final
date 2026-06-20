@@ -88,5 +88,15 @@ export const GAME_CONFIG = {
     zSpawn: 16,
     zDespawn: -14,
     maxCount: 8
+  },
+  ddgi: {
+    resolution: { x: 5, y: 3, z: 6 },
+    bounds: {
+      min: { x: -12, y: -1.1, z: -12 },
+      max: { x: 12, y: 4.2, z: 18 }
+    },
+    intensity: 1.65,
+    flashRadius: 5.5,
+    flashDecay: 2.8
   }
 };

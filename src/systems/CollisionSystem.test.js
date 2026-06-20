@@ -32,7 +32,7 @@ describe('CollisionSystem', () => {
       enemies: collection([]),
       obstacles: collection([]),
       pickups,
-      surfelGI: { flash() {} }
+      gi: { flash() {} }
     });
 
     expect(state.ammo).toBe(18);
@@ -64,7 +64,7 @@ describe('CollisionSystem', () => {
       enemies,
       obstacles: collection([]),
       pickups: collection([]),
-      surfelGI: { flash() {} }
+      gi: { flash() {} }
     });
 
     expect(projectiles.removed).toContain(projectile);
