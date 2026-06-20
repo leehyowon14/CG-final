@@ -35,7 +35,9 @@ export default [
         process: 'readonly',
         fetch: 'readonly',
         setTimeout: 'readonly',
-        Uint8Array: 'readonly'
+        Uint8Array: 'readonly',
+        URL: 'readonly',
+        window: 'readonly'
       }
     }
   }

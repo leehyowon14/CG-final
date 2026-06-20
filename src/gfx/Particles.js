@@ -28,12 +28,55 @@ export class ParticleBurst {
     }
   }
 
+  spawnHit(position, color) {
+    const ringMaterial = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide
+    });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.72, 28), ringMaterial);
+    ring.position.copy(position);
+    ring.rotation.x = Math.PI / 2;
+    this.items.push({
+      mesh: ring,
+      velocity: new THREE.Vector3(0, 0, 0),
+      life: 0.28,
+      maxLife: 0.28,
+      scaleRate: 5.8
+    });
+    this.scene.add(ring);
+
+    const shardMaterial = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.95
+    });
+    for (let i = 0; i < 24; i += 1) {
+      const mesh = new THREE.Mesh(new THREE.TetrahedronGeometry(0.08, 0), shardMaterial.clone());
+      mesh.position.copy(position);
+      const angle = (Math.PI * 2 * i) / 24;
+      const speed = 3.2 + Math.random() * 3.4;
+      this.items.push({
+        mesh,
+        velocity: new THREE.Vector3(Math.cos(angle) * speed, Math.random() * 1.4, Math.sin(angle) * speed),
+        life: 0.45,
+        maxLife: 0.45,
+        scaleRate: 0
+      });
+      this.scene.add(mesh);
+    }
+  }
+
   update(delta) {
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       const item = this.items[i];
       item.life -= delta;
       item.mesh.position.addScaledVector(item.velocity, delta);
-      item.mesh.material.opacity = Math.max(0, item.life / 0.45);
+      if (item.scaleRate) {
+        item.mesh.scale.addScalar(delta * item.scaleRate);
+      }
+      item.mesh.material.opacity = Math.max(0, item.life / (item.maxLife ?? 0.45));
       if (item.life <= 0) {
         this.scene.remove(item.mesh);
         item.mesh.geometry.dispose();

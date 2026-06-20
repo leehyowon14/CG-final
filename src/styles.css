@@ -30,6 +30,65 @@ canvas {
   height: 100%;
 }
 
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 42%, rgb(53 214 198 / 16%), transparent 28%),
+    rgb(4 9 13 / 96%);
+  color: #eefbff;
+  transition: opacity 260ms ease, visibility 260ms ease;
+}
+
+.loading-screen.is-hidden {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.loading-screen__panel {
+  width: min(420px, calc(100vw - 48px));
+}
+
+.loading-screen__title {
+  margin-bottom: 14px;
+  color: #35d6c6;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.loading-screen__track {
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid rgb(53 214 198 / 42%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 9%);
+  box-shadow: 0 0 28px rgb(53 214 198 / 16%);
+}
+
+.loading-screen__track i {
+  display: block;
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #35d6c6, #7fe7ff);
+  box-shadow: 0 0 18px rgb(127 231 255 / 72%);
+  transition: width 120ms ease;
+}
+
+.loading-screen__meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  color: #a8bfca;
+  font-size: 12px;
+}
+
+.loading-screen__meta b {
+  color: #eefbff;
+}
+
 .hud {
   --accent: #35d6c6;
   position: fixed;

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GAME_CONFIG } from '../core/Constants.js';
 import { Pickup } from '../entities/Pickup.js';
+import { disposeObject3D } from '../utils/dispose.js';
 import { randomLane } from '../utils/math.js';
 
 export class PickupSystem {
@@ -27,7 +28,7 @@ export class PickupSystem {
   }
 
   spawnPickup(dimensionId) {
-    const kind = dimensionId === 'phase' ? 'ammo' : dimensionId === 'stability' && Math.random() > 0.5 ? 'shield' : 'health';
+    const kind = pickupKindForDimension(dimensionId);
     const pickup = new Pickup(kind, new THREE.Vector3(randomLane(), 0.25, GAME_CONFIG.pickup.zSpawn));
     this.items.push(pickup);
     this.scene.add(pickup.mesh);
@@ -43,6 +44,7 @@ export class PickupSystem {
   removeAt(index) {
     const [pickup] = this.items.splice(index, 1);
     this.scene.remove(pickup.mesh);
+    disposeObject3D(pickup.mesh);
   }
 
   reset() {
@@ -51,4 +53,10 @@ export class PickupSystem {
     }
     this.spawnTimer = 1.2;
   }
+}
+
+function pickupKindForDimension(dimensionId) {
+  if (dimensionId === 'phase') return 'ammo';
+  if (dimensionId === 'combat') return 'power';
+  return Math.random() > 0.5 ? 'shield' : 'health';
 }

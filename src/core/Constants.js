@@ -7,8 +7,8 @@ export const DIMENSIONS = {
     label: '안정',
     shortLabel: 'STABILITY',
     color: new THREE.Color('#35d6c6'),
-    darkColor: new THREE.Color('#071f28'),
-    fogColor: new THREE.Color('#082b34'),
+    darkColor: new THREE.Color('#0a1d25'),
+    fogColor: new THREE.Color('#0b3a43'),
     accent: '#35d6c6',
     scoreRate: 2,
     spawnRate: 0.45,
@@ -20,8 +20,8 @@ export const DIMENSIONS = {
     label: '전투',
     shortLabel: 'COMBAT',
     color: new THREE.Color('#ff5b35'),
-    darkColor: new THREE.Color('#2a0d09'),
-    fogColor: new THREE.Color('#35100b'),
+    darkColor: new THREE.Color('#2f120d'),
+    fogColor: new THREE.Color('#43180f'),
     accent: '#ff5b35',
     scoreRate: 5,
     spawnRate: 1.35,
@@ -33,8 +33,8 @@ export const DIMENSIONS = {
     label: '위상',
     shortLabel: 'PHASE',
     color: new THREE.Color('#a46cff'),
-    darkColor: new THREE.Color('#160b2d'),
-    fogColor: new THREE.Color('#21103e'),
+    darkColor: new THREE.Color('#20123c'),
+    fogColor: new THREE.Color('#301956'),
     accent: '#a46cff',
     scoreRate: 3,
     spawnRate: 0.65,
@@ -47,8 +47,11 @@ export const DIMENSION_ORDER = ['stability', 'combat', 'phase'];
 export const GAME_CONFIG = {
   bounds: {
     x: 12,
-    zMin: -10,
-    zMax: 15
+    zMin: -10.5,
+    zMax: -1.8
+  },
+  world: {
+    scrollSpeed: 5.6
   },
   player: {
     speed: 12,

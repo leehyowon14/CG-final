@@ -5,6 +5,7 @@ import { createSceneSetup } from '../scene/SceneSetup.js';
 import { CameraRig } from '../scene/CameraRig.js';
 import { Lights } from '../scene/Lights.js';
 import { DimensionEnvironment } from '../scene/DimensionEnvironment.js';
+import { EnvironmentMap } from '../scene/EnvironmentMap.js';
 import { PlayerShip } from '../entities/PlayerShip.js';
 import { ProjectileSystem } from '../systems/ProjectileSystem.js';
 import { EnemySystem } from '../systems/EnemySystem.js';
@@ -15,6 +16,7 @@ import { DimensionManager } from '../systems/DimensionManager.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
 import { SurfelGIManager } from '../systems/SurfelGIManager.js';
 import { HUD } from '../ui/HUD.js';
+import { ParticleBurst } from '../gfx/Particles.js';
 
 export class Game {
   constructor(root) {
@@ -26,6 +28,7 @@ export class Game {
     this.cameraRig = new CameraRig(this.setup.camera);
     this.lights = new Lights(this.setup.scene);
     this.environment = new DimensionEnvironment(this.setup.scene);
+    this.environmentMap = new EnvironmentMap(this.setup.scene, this.setup.renderer);
     this.player = new PlayerShip();
     this.projectiles = new ProjectileSystem(this.setup.scene);
     this.enemies = new EnemySystem(this.setup.scene);
@@ -34,6 +37,7 @@ export class Game {
     this.dimensionManager = new DimensionManager(this.state);
     this.scoreSystem = new ScoreSystem(this.state);
     this.surfelGI = new SurfelGIManager(this.setup.scene);
+    this.particles = new ParticleBurst(this.setup.scene);
     this.collisionSystem = new CollisionSystem(this.state);
     this.hud = new HUD(root, this.state);
     this.frameId = 0;
@@ -72,8 +76,13 @@ export class Game {
       this.state.giEnabled = !this.state.giEnabled;
     }
 
+    if (this.input.consume('KeyV')) {
+      this.cameraRig.cycleView();
+    }
+
     this.dimensionManager.update(delta, this.input);
     this.environment.update(delta, this.state.dimension);
+    this.environmentMap.update(this.state.dimension);
     this.lights.update(this.state.dimension);
     this.surfelGI.update(delta, this.state);
 
@@ -84,7 +93,7 @@ export class Game {
       this.enemies.update(delta, this.state);
       this.obstacles.update(delta, this.state);
       this.pickups.update(delta, this.state);
-      this.collisionSystem.update({
+      const collisionEvents = this.collisionSystem.update({
         player: this.player,
         projectiles: this.projectiles,
         enemies: this.enemies,
@@ -92,12 +101,24 @@ export class Game {
         pickups: this.pickups,
         surfelGI: this.surfelGI
       });
+      this.handleCollisionEvents(collisionEvents);
       this.player.applyIndirectLight(this.surfelGI.sampleAt(this.player.group.position), this.state.giEnabled);
       this.scoreSystem.update(delta);
     }
 
+    this.particles.update(delta);
     this.cameraRig.update(delta, this.player.group.position);
     this.hud.update();
+  }
+
+  handleCollisionEvents(events) {
+    for (const event of events) {
+      if (event.type === 'playerHit') {
+        this.player.flashHit();
+        this.cameraRig.shake(event.amount > 20 ? 0.75 : 0.48);
+        this.particles.spawnHit(this.player.group.position, this.state.dimensionConfig.color);
+      }
+    }
   }
 
   render() {
@@ -112,6 +133,7 @@ export class Game {
     this.obstacles.reset();
     this.pickups.reset();
     this.surfelGI.reset();
+    this.particles.reset();
     this.applyLaunchParams();
   }
 
@@ -137,11 +159,11 @@ export class Game {
     }
 
     if (demo) {
-      this.seedDemoScene(demo);
+      this.seedDemoScene(demo, params.get('hit') === '1');
     }
   }
 
-  seedDemoScene(demo) {
+  seedDemoScene(demo, shouldDemoHit = false) {
     if (demo === 'stability') {
       this.state.stabilityTime = -999;
       this.state.warning = '';
@@ -152,6 +174,10 @@ export class Game {
       this.enemies.spawnEnemy('combat');
       this.enemies.spawnBoss();
       this.projectiles.spawnPlayerProjectile(this.player.group.position, this.state.dimensionConfig.color);
+      if (shouldDemoHit) {
+        this.collisionSystem.damagePlayer(12, this.player.group.position, 'demoHit');
+        this.handleCollisionEvents(this.collisionSystem.events);
+      }
     }
 
     if (demo === 'phase') {
@@ -181,6 +207,7 @@ export class Game {
     this.resizeObserver.disconnect();
     this.input.dispose();
     this.hud.dispose();
+    this.environmentMap.dispose();
     this.setup.renderer.dispose();
     this.root.innerHTML = '';
   }

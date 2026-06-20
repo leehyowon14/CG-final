@@ -35,7 +35,8 @@ export class ProjectileSystem {
   }
 
   spawnEnemyProjectile(position, color, lateralVelocity = 0) {
-    const spawnPosition = position.clone().add(new THREE.Vector3(0, 0, -1));
+    const spawnPosition = position.clone().add(new THREE.Vector3(0, -0.9, -1));
+    spawnPosition.y = 0.12;
     const velocity = new THREE.Vector3(lateralVelocity * 12, 0, -12);
     const projectile = new Projectile(spawnPosition, color, 'enemy', velocity);
     this.items.push(projectile);

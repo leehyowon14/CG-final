@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { DIMENSIONS, GAME_CONFIG } from '../core/Constants.js';
 import { Enemy } from '../entities/Enemy.js';
+import { disposeObject3D } from '../utils/dispose.js';
 import { randomLane } from '../utils/math.js';
 
 export class EnemySystem {
@@ -15,16 +16,18 @@ export class EnemySystem {
 
   update(delta, state) {
     this.spawnTimer -= delta * DIMENSIONS[state.dimension].spawnRate;
-    this.bossTimer -= delta;
 
     if (this.spawnTimer <= 0 && this.items.length < GAME_CONFIG.enemy.maxCount) {
       this.spawnTimer = state.dimension === 'combat' ? 0.65 : 1.8;
       this.spawnEnemy(state.dimension);
     }
 
-    if (this.bossTimer <= 0 && !this.items.some((enemy) => enemy.type === 'boss')) {
-      this.bossTimer = 36;
-      this.spawnBoss();
+    if (state.dimension === 'combat') {
+      this.bossTimer -= delta;
+      if (this.bossTimer <= 0 && !this.items.some((enemy) => enemy.type === 'boss')) {
+        this.bossTimer = 36;
+        this.spawnBoss();
+      }
     }
 
     const playerPosition = new THREE.Vector3(0, 0, -6);
@@ -70,6 +73,7 @@ export class EnemySystem {
   removeAt(index) {
     const [enemy] = this.items.splice(index, 1);
     this.scene.remove(enemy.mesh);
+    disposeObject3D(enemy.mesh);
   }
 
   reset() {

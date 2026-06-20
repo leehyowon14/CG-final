@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { DIMENSIONS, GAME_CONFIG } from '../core/Constants.js';
+import { GAME_CONFIG } from '../core/Constants.js';
 import { Obstacle } from '../entities/Obstacle.js';
+import { disposeObject3D } from '../utils/dispose.js';
 import { randomLane } from '../utils/math.js';
 
 export class ObstacleSystem {
@@ -11,10 +12,12 @@ export class ObstacleSystem {
   }
 
   update(delta, state) {
-    this.spawnTimer -= delta * DIMENSIONS[state.dimension].obstacleRate;
-    if (this.spawnTimer <= 0 && this.items.length < GAME_CONFIG.obstacle.maxCount) {
-      this.spawnTimer = state.dimension === 'phase' ? 0.75 : 2.5;
-      this.spawnObstacle(state.dimension);
+    if (state.dimension === 'phase') {
+      this.spawnTimer -= delta;
+      if (this.spawnTimer <= 0 && this.items.length < GAME_CONFIG.obstacle.maxCount) {
+        this.spawnTimer = 0.75;
+        this.spawnObstacle(state.dimension);
+      }
     }
 
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
@@ -27,7 +30,9 @@ export class ObstacleSystem {
   }
 
   spawnObstacle(dimensionId) {
-    const kind = dimensionId === 'phase' ? weightedKind() : 'crystal';
+    if (dimensionId !== 'phase') return;
+
+    const kind = weightedKind();
     const obstacle = new Obstacle(kind, new THREE.Vector3(randomLane(), 0.2, GAME_CONFIG.obstacle.zSpawn));
     this.items.push(obstacle);
     this.scene.add(obstacle.mesh);
@@ -43,6 +48,7 @@ export class ObstacleSystem {
   removeAt(index) {
     const [obstacle] = this.items.splice(index, 1);
     this.scene.remove(obstacle.mesh);
+    disposeObject3D(obstacle.mesh);
   }
 
   reset() {

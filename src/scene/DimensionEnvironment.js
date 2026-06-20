@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DIMENSIONS } from '../core/Constants.js';
+import { DIMENSIONS, GAME_CONFIG } from '../core/Constants.js';
 
 export class DimensionEnvironment {
   constructor(scene) {
@@ -7,8 +7,10 @@ export class DimensionEnvironment {
     this.group = new THREE.Group();
     this.tunnel = this.createTunnel();
     this.grid = this.createGrid();
-    this.riftParticles = this.createRiftParticles();
-    this.group.add(this.tunnel, this.grid, this.riftParticles);
+    this.starLayers = this.createStarLayers();
+    this.dustField = this.createDustField();
+    this.scroll = 0;
+    this.group.add(this.tunnel, this.grid, ...this.starLayers, this.dustField);
     scene.add(this.group);
   }
 
@@ -17,7 +19,7 @@ export class DimensionEnvironment {
     const material = new THREE.MeshBasicMaterial({
       color: '#082b34',
       transparent: true,
-      opacity: 0.34,
+      opacity: 0.18,
       side: THREE.BackSide,
       wireframe: true
     });
@@ -32,38 +34,76 @@ export class DimensionEnvironment {
     grid.position.y = -1.25;
     grid.position.z = 4;
     grid.material.transparent = true;
-    grid.material.opacity = 0.45;
+    grid.material.opacity = 0.38;
+    grid.material.depthWrite = false;
     return grid;
   }
 
-  createRiftParticles() {
-    const group = new THREE.Group();
-    const material = new THREE.MeshBasicMaterial({ color: '#35d6c6', transparent: true, opacity: 0.75 });
-    for (let i = 0; i < 70; i += 1) {
-      const shard = new THREE.Mesh(new THREE.TetrahedronGeometry(0.08 + Math.random() * 0.14, 0), material.clone());
-      shard.position.set((Math.random() - 0.5) * 28, Math.random() * 8 - 0.5, Math.random() * 34 - 16);
-      shard.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-      group.add(shard);
+  createStarLayers() {
+    return [
+      this.createPointField({ count: 460, spreadX: 44, spreadY: 24, minY: 1.5, size: 0.04, opacity: 1, speed: 2.8 }),
+      this.createPointField({ count: 190, spreadX: 34, spreadY: 12, minY: -0.3, size: 0.075, opacity: 0.72, speed: 5.4 })
+    ];
+  }
+
+  createDustField() {
+    return this.createPointField({ count: 150, spreadX: 28, spreadY: 7, minY: -0.9, size: 0.11, opacity: 0.42, speed: 8.2 });
+  }
+
+  createPointField({ count, spreadX, spreadY, minY, size, opacity, speed }) {
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i += 1) {
+      positions[i * 3] = (Math.random() - 0.5) * spreadX;
+      positions[i * 3 + 1] = minY + Math.random() * spreadY;
+      positions[i * 3 + 2] = Math.random() * 44 - 20;
     }
-    return group;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const material = new THREE.PointsMaterial({
+      color: '#d8f6ff',
+      size,
+      sizeAttenuation: true,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const points = new THREE.Points(geometry, material);
+    points.userData.speed = speed;
+    points.userData.spreadX = spreadX;
+    points.userData.spreadY = spreadY;
+    points.userData.minY = minY;
+    return points;
   }
 
   update(delta, dimensionId) {
     const dimension = DIMENSIONS[dimensionId];
+    this.scroll += delta * GAME_CONFIG.world.scrollSpeed;
     this.scene.background = dimension.darkColor;
     this.scene.fog.color.copy(dimension.fogColor);
     this.tunnel.material.color.copy(dimension.color);
     this.grid.material.color.copy(dimension.color);
+    this.grid.position.z = 4 - (this.scroll % 2);
+    this.tunnel.position.z = 4 - (this.scroll % 3) * 0.35;
     this.group.rotation.z += delta * 0.08;
-    this.riftParticles.children.forEach((child, index) => {
-      child.position.z -= delta * (1.8 + (index % 5) * 0.25);
-      child.rotation.y += delta * 0.9;
-      if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshBasicMaterial) {
-        child.material.color.copy(dimension.color);
+    for (const field of [...this.starLayers, this.dustField]) {
+      field.material.color.copy(new THREE.Color('#d8f6ff').lerp(dimension.color, 0.2));
+      const positions = field.geometry.attributes.position;
+      const speed = field.userData.speed + GAME_CONFIG.world.scrollSpeed;
+      for (let i = 0; i < positions.count; i += 1) {
+        const z = positions.getZ(i) - delta * speed;
+        if (z < -20) {
+          positions.setXYZ(
+            i,
+            (Math.random() - 0.5) * field.userData.spreadX,
+            field.userData.minY + Math.random() * field.userData.spreadY,
+            24
+          );
+        } else {
+          positions.setZ(i, z);
+        }
       }
-      if (child.position.z < -16) {
-        child.position.z = 18;
-      }
-    });
+      positions.needsUpdate = true;
+    }
   }
 }

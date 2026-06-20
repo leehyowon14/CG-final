@@ -7,7 +7,7 @@ const projectileGeometry = new THREE.SphereGeometry(GAME_CONFIG.projectile.radiu
 export class Projectile {
   constructor(position, dimensionColor, owner = 'player', velocity = null) {
     this.owner = owner;
-    this.radius = GAME_CONFIG.projectile.radius;
+    this.radius = owner === 'player' ? GAME_CONFIG.projectile.radius : 0.32;
     this.damage = owner === 'player' ? GAME_CONFIG.projectile.damage : 14;
     this.life = owner === 'player' ? GAME_CONFIG.projectile.ttl : 3.2;
     this.velocity = velocity ?? new THREE.Vector3(0, 0, GAME_CONFIG.projectile.speed);

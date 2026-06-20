@@ -23,7 +23,7 @@ export class HUD {
         <div class="metric metric--score"><span>Score</span><b data-score>0</b></div>
         <div class="metric"><span>Best</span><b data-best>0</b></div>
         <div class="metric"><span>Kills</span><b data-kills>0</b></div>
-        <div class="toggles"><span>G Surfel</span><span>H GI</span><span>R Restart</span></div>
+        <div class="toggles"><span>V View</span><span>G Surfel</span><span>H GI</span><span>R Restart</span></div>
       </section>
       <div class="game-over" data-game-over>
         <h1>Dimension Collapse</h1>

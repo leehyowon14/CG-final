@@ -72,4 +72,14 @@ describe('CollisionSystem', () => {
     expect(state.kills).toBe(1);
     expect(state.score).toBeGreaterThan(90);
   });
+
+  it('applies combat power pickups as score and combo rewards', () => {
+    const state = new GameState();
+    const collision = new CollisionSystem(state);
+
+    collision.applyPickup({ kind: 'power' });
+
+    expect(state.combo).toBe(1);
+    expect(state.score).toBe(140);
+  });
 });

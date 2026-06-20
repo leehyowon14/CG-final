@@ -1,31 +1,34 @@
 import { GAME_CONFIG } from '../core/Constants.js';
+import { hbvHit } from './HBV.js';
 import { sphereHit } from '../utils/math.js';
 
 export class CollisionSystem {
   constructor(state) {
     this.state = state;
+    this.events = [];
   }
 
   update({ player, projectiles, enemies, obstacles, pickups, surfelGI }) {
+    this.events = [];
     for (const projectile of [...projectiles.items]) {
       if (projectile.owner === 'player') {
         this.handlePlayerProjectile(projectile, projectiles, enemies, obstacles, surfelGI);
-      } else if (sphereHit(projectile.mesh.position, projectile.radius, player.group.position, player.radius)) {
-        this.state.damage(projectile.damage);
+      } else if (hbvHit(player.hbv, player.group.position, projectile.mesh.position, projectile.radius)) {
+        this.damagePlayer(projectile.damage, projectile.mesh.position, 'enemyProjectile');
         projectiles.remove(projectile);
       }
     }
 
     for (const enemy of [...enemies.items]) {
-      if (sphereHit(enemy.mesh.position, enemy.radius, player.group.position, player.radius)) {
-        this.state.damage(enemy.type === 'boss' ? 36 : 22);
+      if (hbvHit(player.hbv, player.group.position, enemy.mesh.position, enemy.radius)) {
+        this.damagePlayer(enemy.type === 'boss' ? 36 : 22, enemy.mesh.position, 'enemyBody');
         enemies.remove(enemy);
       }
     }
 
     for (const obstacle of [...obstacles.items]) {
-      if (sphereHit(obstacle.mesh.position, obstacle.radius, player.group.position, player.radius)) {
-        this.state.damage(obstacle.kind === 'mine' ? 28 : 18);
+      if (hbvHit(player.hbv, player.group.position, obstacle.mesh.position, obstacle.radius)) {
+        this.damagePlayer(obstacle.kind === 'mine' ? 28 : 18, obstacle.mesh.position, 'obstacle');
         obstacles.remove(obstacle);
       } else if (
         this.state.dimension === 'phase' &&
@@ -42,6 +45,17 @@ export class CollisionSystem {
         pickups.remove(pickup);
       }
     }
+    return this.events;
+  }
+
+  damagePlayer(amount, position, source) {
+    this.state.damage(amount);
+    this.events.push({
+      type: 'playerHit',
+      amount,
+      source,
+      position: position.clone()
+    });
   }
 
   handlePlayerProjectile(projectile, projectiles, enemies, obstacles, surfelGI) {
@@ -80,6 +94,9 @@ export class CollisionSystem {
     } else if (pickup.kind === 'shield') {
       this.state.shield = Math.min(GAME_CONFIG.player.maxShield, this.state.shield + 24);
       this.state.addScore(15);
+    } else if (pickup.kind === 'power') {
+      this.state.combo += 1;
+      this.state.addScore(120 + this.state.combo * 20);
     } else {
       this.state.hp = Math.min(GAME_CONFIG.player.maxHp, this.state.hp + 20);
       this.state.addScore(15);
