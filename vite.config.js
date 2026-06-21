@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/CG-final-game/',
+  base: '/CG-final/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets'
