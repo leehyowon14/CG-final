@@ -214,7 +214,7 @@ export class Game {
   }
 
   updateFogForCameraMode() {
-    this.setup.scene.fog = this.cameraRig.mode.id === 'top' ? null : this.setup.fog;
+    this.setup.scene.fog = this.setup.fog;
   }
 
   clearDimensionObjects() {

@@ -868,10 +868,10 @@ async function checkCameraCycle(page) {
   await page.keyboard.press('KeyV');
   await page.waitForTimeout(120);
   const afterThird = await page.evaluate(() => window['__RIFT_AVIATOR__'].cameraRig.mode.id);
-  const topFogDisabled = await page.evaluate(() => {
+  const topFogRetained = await page.evaluate(() => {
     const game = window['__RIFT_AVIATOR__'];
     game.updateFogForCameraMode();
-    return game.cameraRig.mode.id === 'top' && game.setup.scene.fog === null;
+    return game.cameraRig.mode.id === 'top' && game.setup.scene.fog !== null;
   });
   await page.screenshot({ path: `${screenshotDir}/14_camera_top.png` });
   await page.keyboard.press('KeyV');
@@ -892,11 +892,11 @@ async function checkCameraCycle(page) {
       afterFirst === 'firstPerson' &&
       afterSecond === 'chase' &&
       afterThird === 'top' &&
-      topFogDisabled &&
+      topFogRetained &&
       currentFogRestored &&
       currentFogRange.near >= 20 &&
       currentFogRange.far >= 56,
-    detail: `${before} -> ${afterFirst} -> ${afterSecond} -> ${afterThird}, topFogDisabled=${topFogDisabled}, currentFogRestored=${currentFogRestored}, fog=${currentFogRange.near}/${currentFogRange.far}`
+    detail: `${before} -> ${afterFirst} -> ${afterSecond} -> ${afterThird}, topFogRetained=${topFogRetained}, currentFogRestored=${currentFogRestored}, fog=${currentFogRange.near}/${currentFogRange.far}`
   };
 }
 
