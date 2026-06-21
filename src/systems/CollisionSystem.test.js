@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { GameState } from '../core/GameState.js';
+import { createPlayerHBV } from './HBV.js';
 import { CollisionSystem } from './CollisionSystem.js';
 
 function meshAt(x, y, z) {
@@ -71,6 +72,44 @@ describe('CollisionSystem', () => {
     expect(enemies.removed).toContain(enemy);
     expect(state.kills).toBe(1);
     expect(state.score).toBeGreaterThan(90);
+  });
+
+  it('uses tightened player HBV for hostile projectile hits', () => {
+    const state = new GameState();
+    const collision = new CollisionSystem(state);
+    const player = {
+      radius: 1,
+      hbv: createPlayerHBV(),
+      group: {
+        position: new THREE.Vector3(0, 0, -6),
+        quaternion: new THREE.Quaternion()
+      }
+    };
+    const nearMiss = { owner: 'enemy', radius: 0.32, damage: 14, mesh: meshAt(1.12, 0, -5.35) };
+    const directHit = { owner: 'enemy', radius: 0.32, damage: 14, mesh: meshAt(0.18, 0, -6) };
+
+    collision.update({
+      player,
+      projectiles: collection([nearMiss]),
+      enemies: collection([]),
+      obstacles: collection([]),
+      pickups: collection([]),
+      gi: { flash() {} }
+    });
+
+    expect(state.hp).toBe(100);
+
+    collision.update({
+      player,
+      projectiles: collection([directHit]),
+      enemies: collection([]),
+      obstacles: collection([]),
+      pickups: collection([]),
+      gi: { flash() {} }
+    });
+
+    expect(state.hp).toBe(100);
+    expect(state.shield).toBe(66);
   });
 
   it('applies combat power pickups as score and combo rewards', () => {

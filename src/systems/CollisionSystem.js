@@ -2,6 +2,8 @@ import { GAME_CONFIG } from '../core/Constants.js';
 import { hbvHit } from './HBV.js';
 import { sphereHit } from '../utils/math.js';
 
+const PLAYER_HIT_RADIUS_SCALE = 0.72;
+
 export class CollisionSystem {
   constructor(state) {
     this.state = state;
@@ -13,21 +15,21 @@ export class CollisionSystem {
     for (const projectile of [...projectiles.items]) {
       if (projectile.owner === 'player') {
         this.handlePlayerProjectile(projectile, projectiles, enemies, obstacles, gi);
-      } else if (hbvHit(player.hbv, player.group.position, projectile.mesh.position, projectile.radius)) {
+      } else if (playerHit(player, projectile.mesh.position, projectile.radius)) {
         this.damagePlayer(projectile.damage, projectile.mesh.position, 'enemyProjectile');
         projectiles.remove(projectile);
       }
     }
 
     for (const enemy of [...enemies.items]) {
-      if (hbvHit(player.hbv, player.group.position, enemy.mesh.position, enemy.radius)) {
+      if (playerHit(player, enemy.mesh.position, enemy.radius)) {
         this.damagePlayer(enemy.type === 'boss' ? 36 : 22, enemy.mesh.position, 'enemyBody');
         enemies.remove(enemy);
       }
     }
 
     for (const obstacle of [...obstacles.items]) {
-      if (hbvHit(player.hbv, player.group.position, obstacle.mesh.position, obstacle.radius)) {
+      if (playerHit(player, obstacle.mesh.position, obstacle.radius)) {
         this.damagePlayer(obstacle.kind === 'mine' ? 28 : 18, obstacle.mesh.position, 'obstacle');
         obstacles.remove(obstacle);
       } else if (
@@ -102,4 +104,14 @@ export class CollisionSystem {
       this.state.addScore(15);
     }
   }
+}
+
+function playerHit(player, targetPosition, targetRadius) {
+  return hbvHit(
+    player.hbv,
+    player.group.position,
+    targetPosition,
+    targetRadius * PLAYER_HIT_RADIUS_SCALE,
+    player.group.quaternion
+  );
 }
