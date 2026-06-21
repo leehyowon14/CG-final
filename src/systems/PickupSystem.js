@@ -11,7 +11,7 @@ export class PickupSystem {
     this.spawnTimer = 2.4;
   }
 
-  update(delta, state) {
+  update(delta, state, worldTravelSpeed = 0) {
     this.spawnTimer -= delta;
     if (this.spawnTimer <= 0 && this.items.length < GAME_CONFIG.pickup.maxCount) {
       this.spawnTimer = state.dimension === 'phase' ? 1.35 : 3.1;
@@ -20,8 +20,10 @@ export class PickupSystem {
 
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       const pickup = this.items[i];
-      pickup.update(delta);
-      if (pickup.mesh.position.z < GAME_CONFIG.pickup.zDespawn) {
+      pickup.update(delta, worldTravelSpeed);
+      const outOfTravelRange =
+        pickup.mesh.position.z < GAME_CONFIG.pickup.zDespawn || pickup.mesh.position.z > GAME_CONFIG.pickup.zSpawn + 24;
+      if (outOfTravelRange) {
         this.removeAt(i);
       }
     }

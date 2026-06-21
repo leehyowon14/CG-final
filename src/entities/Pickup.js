@@ -8,8 +8,8 @@ export class Pickup {
     this.mesh.position.copy(position);
   }
 
-  update(delta) {
-    this.mesh.position.z -= delta * 4.1;
+  update(delta, worldTravelSpeed = 0) {
+    this.mesh.position.z -= delta * (4.1 + worldTravelSpeed);
     this.mesh.rotation.y += delta * 2.5;
     this.mesh.rotation.x += delta * 0.8;
   }

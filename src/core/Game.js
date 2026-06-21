@@ -1,6 +1,7 @@
 import { Time } from './Time.js';
 import { GameState } from './GameState.js';
 import { InputManager } from './InputManager.js';
+import { DIMENSIONS } from './Constants.js';
 import { createSceneSetup } from '../scene/SceneSetup.js';
 import { CameraRig } from '../scene/CameraRig.js';
 import { Lights } from '../scene/Lights.js';
@@ -15,6 +16,7 @@ import { CollisionSystem } from '../systems/CollisionSystem.js';
 import { DimensionManager } from '../systems/DimensionManager.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
 import { DDGIManager } from '../systems/DDGIManager.js';
+import { DimensionRiftSystem } from '../systems/DimensionRiftSystem.js';
 import { HUD } from '../ui/HUD.js';
 import { ParticleBurst } from '../gfx/Particles.js';
 
@@ -37,10 +39,12 @@ export class Game {
     this.dimensionManager = new DimensionManager(this.state);
     this.scoreSystem = new ScoreSystem(this.state);
     this.ddgi = new DDGIManager(this.setup.scene);
+    this.dimensionRifts = new DimensionRiftSystem(this.setup.scene);
     this.particles = new ParticleBurst(this.setup.scene);
     this.collisionSystem = new CollisionSystem(this.state);
     this.hud = new HUD(root, this.state);
     this.frameId = 0;
+    this.dimensionTransition = null;
     this.resizeObserver = new ResizeObserver(() => this.resize());
 
     this.setup.scene.add(this.player.group);
@@ -80,19 +84,32 @@ export class Game {
       this.cameraRig.cycleView();
     }
 
-    this.dimensionManager.update(delta, this.input);
-    this.environment.update(delta, this.state.dimension);
-    this.environmentMap.update(this.state.dimension);
-    this.lights.update(this.state.dimension);
-    this.ddgi.update(delta, this.state);
+    this.dimensionManager.update(delta);
+    if (!this.dimensionTransition) {
+      const request = this.dimensionManager.consumeSwitchRequest(this.input);
+      if (request) {
+        this.dimensionTransition = request;
+        this.dimensionRifts.spawn(this.player.group.position, request.from, request.to, this.setup.camera);
+        this.player.startDimensionWarp();
+        const riftPosition = this.player.group.position.clone();
+        riftPosition.y += 0.85;
+        riftPosition.z += 7.2;
+        this.ddgi.flash(riftPosition, DIMENSIONS[request.to].color);
+      }
+    }
+
+    let worldTravelSpeed = 0;
 
     if (!this.state.gameOver) {
       this.state.elapsed += delta;
       this.player.update(delta, this.input, this.state);
+      worldTravelSpeed = this.player.worldTravelSpeed;
       this.projectiles.update(delta, this.input, this.player, this.state);
-      this.enemies.update(delta, this.state);
-      this.obstacles.update(delta, this.state);
-      this.pickups.update(delta, this.state);
+      this.enemies.update(delta, this.state, worldTravelSpeed);
+      this.obstacles.update(delta, this.state, worldTravelSpeed);
+      this.pickups.update(delta, this.state, worldTravelSpeed);
+      this.dimensionRifts.update(delta, this.setup.camera, worldTravelSpeed, this.player.group.position);
+      this.completeDimensionTransitionIfPassed();
       const collisionEvents = this.collisionSystem.update({
         player: this.player,
         projectiles: this.projectiles,
@@ -103,11 +120,45 @@ export class Game {
       });
       this.handleCollisionEvents(collisionEvents);
       this.scoreSystem.update(delta);
+    } else {
+      this.player.worldTravelSpeed = 0;
+      this.dimensionRifts.update(delta, this.setup.camera, 0, this.player.group.position);
     }
+
+    this.updateFogForCameraMode();
+    this.environment.update(delta, this.state.dimension, worldTravelSpeed);
+    this.environmentMap.update(this.state.dimension);
+    this.lights.update(this.state.dimension);
+    this.ddgi.update(delta, this.state);
 
     this.particles.update(delta);
     this.cameraRig.update(delta, this.player.group.position);
     this.hud.update();
+  }
+
+  completeDimensionTransitionIfPassed() {
+    if (!this.dimensionTransition) return;
+    if (this.dimensionRifts.hasPassedThrough(this.player.group.position, this.dimensionTransition.to)) {
+      this.dimensionManager.completeSwitch(this.dimensionTransition.to);
+      this.clearDimensionObjects();
+      this.player.dimensionWarp = null;
+      this.player.worldTravelSpeed = 0;
+      const riftPosition = this.player.group.position.clone();
+      riftPosition.y += 1.3;
+      this.ddgi.flash(riftPosition, this.state.dimensionConfig.color);
+      this.dimensionTransition = null;
+    }
+  }
+
+  updateFogForCameraMode() {
+    this.setup.scene.fog = this.cameraRig.mode.id === 'top' ? null : this.setup.fog;
+  }
+
+  clearDimensionObjects() {
+    this.enemies.reset();
+    this.obstacles.reset();
+    this.pickups.reset();
+    this.projectiles.reset();
   }
 
   handleCollisionEvents(events) {
@@ -132,6 +183,8 @@ export class Game {
     this.obstacles.reset();
     this.pickups.reset();
     this.ddgi.reset();
+    this.dimensionRifts.reset();
+    this.dimensionTransition = null;
     this.particles.reset();
     this.applyLaunchParams();
   }
@@ -206,6 +259,7 @@ export class Game {
     this.resizeObserver.disconnect();
     this.input.dispose();
     this.hud.dispose();
+    this.dimensionRifts.dispose();
     this.ddgi.dispose();
     this.environmentMap.dispose();
     this.setup.renderer.dispose();

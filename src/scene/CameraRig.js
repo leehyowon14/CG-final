@@ -24,10 +24,10 @@ const VIEW_MODES = [
   },
   {
     id: 'top',
-    offset: new THREE.Vector3(0, 24, -0.1),
+    offset: new THREE.Vector3(0, 38, -0.1),
     lookOffset: new THREE.Vector3(0, 0, 0),
     up: new THREE.Vector3(0, 0, 1),
-    followSpeed: 6
+    followSpeed: 5
   }
 ];
 

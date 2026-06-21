@@ -5,7 +5,7 @@ export class DimensionManager {
     this.state = state;
   }
 
-  update(delta, input) {
+  update(delta) {
     this.state.dimensionRecharge += delta;
     if (
       this.state.dimensionStacks < GAME_CONFIG.dimension.maxStacks &&
@@ -15,13 +15,21 @@ export class DimensionManager {
       this.state.dimensionRecharge = 0;
     }
 
+    this.updateDimensionState(delta);
+  }
+
+  consumeSwitchRequest(input) {
     for (const dimensionId of DIMENSION_ORDER) {
       const key = `Digit${DIMENSION_ORDER.indexOf(dimensionId) + 1}`;
       if (input.consume(key)) {
-        this.switchTo(dimensionId);
+        return this.beginSwitch(dimensionId);
       }
     }
 
+    return null;
+  }
+
+  updateDimensionState(delta) {
     if (this.state.dimension === 'stability') {
       this.state.stabilityTime += delta;
       this.state.hp = Math.min(GAME_CONFIG.player.maxHp, this.state.hp + delta * 5);
@@ -35,18 +43,33 @@ export class DimensionManager {
     }
   }
 
-  switchTo(nextDimension) {
-    if (nextDimension === this.state.dimension) return false;
+  beginSwitch(nextDimension) {
+    if (nextDimension === this.state.dimension) return null;
     if (this.state.dimensionStacks <= 0) {
       this.state.warning = '차원 스택이 부족합니다';
-      return false;
+      return null;
     }
 
-    this.state.dimension = nextDimension;
     this.state.dimensionStacks -= 1;
     this.state.dimensionRecharge = 0;
+    this.state.warning = '차원문 진입 중';
+    return {
+      from: this.state.dimension,
+      to: nextDimension
+    };
+  }
+
+  completeSwitch(nextDimension) {
+    if (nextDimension === this.state.dimension) return false;
+    this.state.dimension = nextDimension;
     this.state.stabilityTime = 0;
     this.state.warning = '';
     return true;
+  }
+
+  switchTo(nextDimension) {
+    const request = this.beginSwitch(nextDimension);
+    if (!request) return false;
+    return this.completeSwitch(request.to);
   }
 }

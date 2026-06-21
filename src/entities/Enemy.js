@@ -13,11 +13,12 @@ export class Enemy {
     this.mesh.rotation.y = Math.PI;
   }
 
-  update(delta, state, playerPosition, spawnEnemyProjectile) {
+  update(delta, state, playerPosition, spawnEnemyProjectile, worldTravelSpeed = 0) {
     if (this.type === 'boss') {
       const targetX = THREE.MathUtils.clamp(playerPosition.x * 0.45, -7, 7);
       this.mesh.position.x = THREE.MathUtils.lerp(this.mesh.position.x, targetX, 1 - Math.exp(-delta * 1.8));
-      this.mesh.position.z = THREE.MathUtils.lerp(this.mesh.position.z, playerPosition.z + 13, 1 - Math.exp(-delta * 1.4));
+      const targetZ = playerPosition.z + 13 - worldTravelSpeed * 0.35;
+      this.mesh.position.z = THREE.MathUtils.lerp(this.mesh.position.z, targetZ, 1 - Math.exp(-delta * 1.4));
       this.mesh.rotation.z = Math.sin(state.elapsed * 1.8) * 0.08;
       this.fireTimer -= delta;
       if (this.fireTimer <= 0) {
@@ -30,7 +31,7 @@ export class Enemy {
     }
 
     const speed = this.type === 'striker' ? 8.2 : 4.4;
-    this.mesh.position.z -= delta * speed;
+    this.mesh.position.z -= delta * (speed + worldTravelSpeed);
     this.mesh.position.x += Math.sin(state.elapsed * 2 + this.mesh.id) * delta * 1.2;
     this.mesh.rotation.y += delta * (this.type === 'drone' ? 1.2 : 0.4);
 

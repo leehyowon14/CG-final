@@ -2,7 +2,8 @@ import * as THREE from 'three';
 
 export function createSceneSetup(root) {
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog('#082b34', 14, 38);
+  const fog = new THREE.Fog('#082b34', 14, 38);
+  scene.fog = fog;
 
   const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 120);
   const renderer = new THREE.WebGLRenderer({
@@ -17,7 +18,7 @@ export function createSceneSetup(root) {
   renderer.shadowMap.type = THREE.PCFShadowMap;
   root.appendChild(renderer.domElement);
 
-  return { scene, camera, renderer };
+  return { scene, camera, renderer, fog };
 }
 
 function isVisualQaMode() {

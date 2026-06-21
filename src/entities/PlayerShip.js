@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import { GAME_CONFIG } from '../core/Constants.js';
-import { clampToBounds } from '../utils/math.js';
 import { createPlayerModel } from '../gfx/ModelFactory.js';
 import { updateEmissiveForDimension, updateShieldMaterial } from '../gfx/Materials.js';
 import { createPlayerHBV } from '../systems/HBV.js';
+
+const WARP_DURATION = 0.72;
+const WARP_DISTANCE = 9.7;
 
 export class PlayerShip {
   constructor() {
@@ -17,6 +19,8 @@ export class PlayerShip {
     this.hbv = createPlayerHBV();
     this.hitFlash = 0;
     this.velocity = new THREE.Vector3();
+    this.worldTravelSpeed = 0;
+    this.dimensionWarp = null;
     this.targetEuler = new THREE.Euler();
     this.targetQuaternion = new THREE.Quaternion();
     this.reset();
@@ -26,11 +30,13 @@ export class PlayerShip {
     this.group.position.copy(this.anchor);
     this.group.quaternion.identity();
     this.velocity.set(0, 0, 0);
+    this.worldTravelSpeed = 0;
+    this.dimensionWarp = null;
   }
 
   update(delta, input, state) {
-    // WASD is screen-space dodge input: W/S move the ship up/down on screen,
-    // while the world scroll creates the forward-flight sensation.
+    // WASD is screen-space dodge input. A/D move the ship laterally; W/S
+    // change world-relative travel speed so the ship stays in the play space.
     const direction = new THREE.Vector3(
       (input.isDown('KeyA') ? 1 : 0) - (input.isDown('KeyD') ? 1 : 0),
       0,
@@ -42,9 +48,10 @@ export class PlayerShip {
     }
 
     this.velocity.lerp(direction.multiplyScalar(GAME_CONFIG.player.speed), 1 - Math.exp(-delta * 12));
-    this.group.position.addScaledVector(this.velocity, delta);
-    clampToBounds(this.group.position);
-    this.group.position.z = THREE.MathUtils.lerp(this.group.position.z, this.anchor.z, 1 - Math.exp(-delta * 0.9));
+    this.group.position.x += this.velocity.x * delta;
+    this.group.position.x = THREE.MathUtils.clamp(this.group.position.x, -GAME_CONFIG.bounds.x, GAME_CONFIG.bounds.x);
+    this.group.position.z = this.anchor.z;
+    this.updateDimensionWarp(delta);
     this.updateAttitude(delta);
     this.core.rotation.y += delta * 3.2;
     updateEmissiveForDimension(this.emissiveMaterials, state.dimension, 0.9);
@@ -59,6 +66,30 @@ export class PlayerShip {
       this.group.scale.setScalar(1 + flash * 0.08);
     } else {
       this.group.scale.setScalar(1);
+    }
+  }
+
+  startDimensionWarp() {
+    this.dimensionWarp = {
+      elapsed: 0,
+      previousDistance: 0
+    };
+  }
+
+  updateDimensionWarp(delta) {
+    this.worldTravelSpeed = this.velocity.z;
+    if (!this.dimensionWarp) return;
+
+    this.dimensionWarp.elapsed = Math.min(WARP_DURATION, this.dimensionWarp.elapsed + delta);
+    const t = this.dimensionWarp.elapsed / WARP_DURATION;
+    const eased = 1 - (1 - t) ** 3;
+    const distance = WARP_DISTANCE * eased;
+    const deltaDistance = distance - this.dimensionWarp.previousDistance;
+    this.worldTravelSpeed = delta > 0 ? deltaDistance / delta : 0;
+    this.dimensionWarp.previousDistance = distance;
+
+    if (this.dimensionWarp.elapsed >= WARP_DURATION) {
+      this.dimensionWarp = null;
     }
   }
 

@@ -12,14 +12,27 @@ function inputWithPressed(code) {
 }
 
 describe('DimensionManager', () => {
-  it('spends one stack when switching dimensions', () => {
+  it('spends one stack when requesting a dimension portal', () => {
     const state = new GameState();
     const manager = new DimensionManager(state);
 
-    manager.update(0.1, inputWithPressed('Digit2'));
+    manager.update(0.1);
+    const request = manager.consumeSwitchRequest(inputWithPressed('Digit2'));
 
-    expect(state.dimension).toBe('combat');
+    expect(request).toEqual({ from: 'stability', to: 'combat' });
+    expect(state.dimension).toBe('stability');
     expect(state.dimensionStacks).toBe(GAME_CONFIG.dimension.maxStacks - 1);
+  });
+
+  it('completes a dimension switch after portal traversal', () => {
+    const state = new GameState();
+    const manager = new DimensionManager(state);
+
+    const request = manager.consumeSwitchRequest(inputWithPressed('Digit2'));
+    const didSwitch = manager.completeSwitch(request.to);
+
+    expect(didSwitch).toBe(true);
+    expect(state.dimension).toBe('combat');
   });
 
   it('blocks switching when stacks are empty', () => {
@@ -27,8 +40,10 @@ describe('DimensionManager', () => {
     const manager = new DimensionManager(state);
     state.dimensionStacks = 0;
 
-    manager.update(0.1, inputWithPressed('Digit3'));
+    manager.update(0.1);
+    const request = manager.consumeSwitchRequest(inputWithPressed('Digit3'));
 
+    expect(request).toBeNull();
     expect(state.dimension).toBe('stability');
     expect(state.warning).toContain('부족');
   });
@@ -38,7 +53,7 @@ describe('DimensionManager', () => {
     const manager = new DimensionManager(state);
     state.dimensionStacks = 1;
 
-    manager.update(GAME_CONFIG.dimension.rechargeSeconds, inputWithPressed('None'));
+    manager.update(GAME_CONFIG.dimension.rechargeSeconds);
 
     expect(state.dimensionStacks).toBe(2);
   });
@@ -49,7 +64,7 @@ describe('DimensionManager', () => {
     state.hp = 50;
     state.shield = 20;
 
-    manager.update(GAME_CONFIG.dimension.stabilityGraceSeconds + 1, inputWithPressed('None'));
+    manager.update(GAME_CONFIG.dimension.stabilityGraceSeconds + 1);
 
     expect(state.hp).toBeGreaterThan(50);
     expect(state.shield).toBeGreaterThan(20);

@@ -11,7 +11,7 @@ export class ObstacleSystem {
     this.spawnTimer = 1.8;
   }
 
-  update(delta, state) {
+  update(delta, state, worldTravelSpeed = 0) {
     if (state.dimension === 'phase') {
       this.spawnTimer -= delta;
       if (this.spawnTimer <= 0 && this.items.length < GAME_CONFIG.obstacle.maxCount) {
@@ -22,8 +22,10 @@ export class ObstacleSystem {
 
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       const obstacle = this.items[i];
-      obstacle.update(delta, state);
-      if (obstacle.mesh.position.z < GAME_CONFIG.obstacle.zDespawn) {
+      obstacle.update(delta, state, worldTravelSpeed);
+      const outOfTravelRange =
+        obstacle.mesh.position.z < GAME_CONFIG.obstacle.zDespawn || obstacle.mesh.position.z > GAME_CONFIG.obstacle.zSpawn + 24;
+      if (outOfTravelRange) {
         this.removeAt(i);
       }
     }

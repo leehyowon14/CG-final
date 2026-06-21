@@ -76,11 +76,14 @@ export class DimensionEnvironment {
     return points;
   }
 
-  update(delta, dimensionId) {
+  update(delta, dimensionId, worldTravelSpeed = 0) {
     const dimension = DIMENSIONS[dimensionId];
-    this.scroll += delta * GAME_CONFIG.world.scrollSpeed;
+    const scrollSpeed = GAME_CONFIG.world.scrollSpeed + worldTravelSpeed;
+    this.scroll += delta * scrollSpeed;
     this.scene.background = dimension.darkColor;
-    this.scene.fog.color.copy(dimension.fogColor);
+    if (this.scene.fog) {
+      this.scene.fog.color.copy(dimension.fogColor);
+    }
     this.tunnel.material.color.copy(dimension.color);
     this.grid.material.color.copy(dimension.color);
     this.grid.position.z = 4 - (this.scroll % 2);
@@ -89,7 +92,7 @@ export class DimensionEnvironment {
     for (const field of [...this.starLayers, this.dustField]) {
       field.material.color.copy(new THREE.Color('#d8f6ff').lerp(dimension.color, 0.2));
       const positions = field.geometry.attributes.position;
-      const speed = field.userData.speed + GAME_CONFIG.world.scrollSpeed;
+      const speed = field.userData.speed + scrollSpeed;
       for (let i = 0; i < positions.count; i += 1) {
         const z = positions.getZ(i) - delta * speed;
         if (z < -20) {
@@ -98,6 +101,13 @@ export class DimensionEnvironment {
             (Math.random() - 0.5) * field.userData.spreadX,
             field.userData.minY + Math.random() * field.userData.spreadY,
             24
+          );
+        } else if (z > 24) {
+          positions.setXYZ(
+            i,
+            (Math.random() - 0.5) * field.userData.spreadX,
+            field.userData.minY + Math.random() * field.userData.spreadY,
+            -20
           );
         } else {
           positions.setZ(i, z);

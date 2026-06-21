@@ -10,9 +10,9 @@ export class Obstacle {
     this.mesh.rotation.set(Math.random(), Math.random() * Math.PI, Math.random());
   }
 
-  update(delta, state) {
+  update(delta, state, worldTravelSpeed = 0) {
     const speed = state.dimension === 'phase' ? 5.3 : 3.7;
-    this.mesh.position.z -= delta * speed;
+    this.mesh.position.z -= delta * (speed + worldTravelSpeed);
     this.mesh.rotation.y += delta * 1.4;
     this.mesh.rotation.x += delta * 0.5;
   }
