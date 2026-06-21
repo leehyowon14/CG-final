@@ -378,11 +378,13 @@ async function checkHBVDebugToggle(page) {
       visible.meshCount >= 5 &&
       visible.boxMeshCount === visible.meshCount &&
       visible.linkCount === visible.meshCount &&
+      visible.objectGroupVisible &&
       visible.positionDelta < 0.001 &&
       !hidden.stateVisible &&
       !hidden.groupVisible &&
+      !hidden.objectGroupVisible &&
       !hidden.hudActive,
-    detail: `visible ${initial.groupVisible}->${visible.groupVisible}->${hidden.groupVisible}, hud=${initial.hudActive}->${visible.hudActive}->${hidden.hudActive}, broad=${visible.broadPhaseCount}/${visible.broadPhaseBoxCount} ${visible.broadPhaseWidth.toFixed(2)}x${visible.broadPhaseDepth.toFixed(2)}, meshes=${visible.meshCount}, boxes=${visible.boxMeshCount}, links=${visible.linkCount}, delta=${visible.positionDelta.toFixed(4)}`
+    detail: `visible ${initial.groupVisible}->${visible.groupVisible}->${hidden.groupVisible}, hud=${initial.hudActive}->${visible.hudActive}->${hidden.hudActive}, broad=${visible.broadPhaseCount}/${visible.broadPhaseBoxCount} ${visible.broadPhaseWidth.toFixed(2)}x${visible.broadPhaseDepth.toFixed(2)}, meshes=${visible.meshCount}, boxes=${visible.boxMeshCount}, links=${visible.linkCount}, objects=${visible.objectSphereCount} ${visible.objectKinds.join('/')}, delta=${visible.positionDelta.toFixed(4)}`
   };
 }
 
@@ -391,12 +393,24 @@ async function hbvDebugStats(page) {
     const { document } = globalThis;
     const game = window['__RIFT_AVIATOR__'];
     game.hbvDebug.update(game.player.group.position, game.player.group.quaternion, game.state.hbvDebug);
+    game.objectBoundsDebug.update(
+      {
+        enemies: game.enemies,
+        obstacles: game.obstacles,
+        pickups: game.pickups,
+        projectiles: game.projectiles
+      },
+      game.state.hbvDebug
+    );
     const group = game.hbvDebug.group;
+    const objectGroup = game.objectBoundsDebug.group;
     const delta = group.position.distanceTo(game.player.group.position);
     const hbvToggle = document.querySelector('[data-hbv-toggle]');
+    const objectSpheres = objectGroup.children.filter((child) => child.visible && child.name.startsWith('ObjectBVH:'));
     return {
       stateVisible: game.state.hbvDebug,
       groupVisible: group.visible,
+      objectGroupVisible: objectGroup.visible,
       hudActive: hbvToggle?.classList.contains('is-active') ?? false,
       broadPhaseCount: group.children.filter((child) => child.name === 'PlayerHBVBroadPhase').length,
       broadPhaseBoxCount: group.children.filter((child) => child.name === 'PlayerHBVBroadPhase' && child.geometry?.type === 'BoxGeometry').length,
@@ -405,6 +419,8 @@ async function hbvDebugStats(page) {
       meshCount: group.children.filter((child) => child.name.startsWith('PlayerHBVMesh:')).length,
       boxMeshCount: group.children.filter((child) => child.name.startsWith('PlayerHBVMesh:') && child.geometry?.type === 'BoxGeometry').length,
       linkCount: group.children.filter((child) => child.name.startsWith('PlayerHBVLink:')).length,
+      objectSphereCount: objectSpheres.length,
+      objectKinds: [...new Set(objectSpheres.map((child) => child.name.replace('ObjectBVH:', '')))].sort(),
       positionDelta: delta
     };
   });

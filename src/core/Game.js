@@ -16,7 +16,7 @@ import { CollisionSystem } from '../systems/CollisionSystem.js';
 import { DimensionManager } from '../systems/DimensionManager.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
 import { DDGIManager } from '../systems/DDGIManager.js';
-import { HBVDebugVisualizer } from '../systems/HBV.js';
+import { HBVDebugVisualizer, ObjectBoundsDebugVisualizer } from '../systems/HBV.js';
 import { DimensionRiftSystem } from '../systems/DimensionRiftSystem.js';
 import { FadeOutSystem } from '../systems/FadeOutSystem.js';
 import { HUD } from '../ui/HUD.js';
@@ -44,6 +44,7 @@ export class Game {
     this.scoreSystem = new ScoreSystem(this.state);
     this.ddgi = new DDGIManager(this.setup.scene);
     this.hbvDebug = new HBVDebugVisualizer(this.player.hbv);
+    this.objectBoundsDebug = new ObjectBoundsDebugVisualizer();
     this.dimensionRifts = new DimensionRiftSystem(this.setup.scene);
     this.fadeOutObjects = new FadeOutSystem(this.setup.scene);
     this.particles = new ParticleBurst(this.setup.scene);
@@ -55,6 +56,7 @@ export class Game {
 
     this.setup.scene.add(this.player.group);
     this.setup.scene.add(this.hbvDebug.group);
+    this.setup.scene.add(this.objectBoundsDebug.group);
     this.enemies.player = this.player;
     this.enemies.projectileSystem = this.projectiles;
     this.applyLaunchParams();
@@ -151,6 +153,15 @@ export class Game {
     this.lights.update(this.state.dimension);
     this.ddgi.update(delta, this.state);
     this.hbvDebug.update(this.player.group.position, this.player.group.quaternion, this.state.hbvDebug);
+    this.objectBoundsDebug.update(
+      {
+        enemies: this.enemies,
+        obstacles: this.obstacles,
+        pickups: this.pickups,
+        projectiles: this.projectiles
+      },
+      this.state.hbvDebug
+    );
 
     this.particles.update(delta);
     this.fadeOutObjects.update(delta);
@@ -292,6 +303,7 @@ export class Game {
     this.hud.dispose();
     this.dimensionRifts.dispose();
     this.hbvDebug.dispose();
+    this.objectBoundsDebug.dispose();
     this.fadeOutObjects.reset();
     this.ddgi.dispose();
     this.environmentMap.dispose();

@@ -174,3 +174,65 @@ export class HBVDebugVisualizer {
     disposeObject3D(this.group);
   }
 }
+
+export class ObjectBoundsDebugVisualizer {
+  constructor() {
+    this.group = new THREE.Group();
+    this.group.name = 'ObjectBVHDebug';
+    this.group.visible = false;
+    this.pool = [];
+  }
+
+  update({ enemies, obstacles, pickups, projectiles }, visible) {
+    this.group.visible = visible;
+    const items = [
+      ...debugItems(enemies.items, '#ff6d42', 'enemy'),
+      ...debugItems(obstacles.items, '#a46cff', 'obstacle'),
+      ...debugItems(pickups.items, '#35f27a', 'pickup'),
+      ...debugItems(projectiles.items, '#7fe7ff', 'projectile')
+    ];
+
+    this.ensurePool(items.length);
+    for (let index = 0; index < this.pool.length; index += 1) {
+      const mesh = this.pool[index];
+      const item = items[index];
+      mesh.visible = visible && Boolean(item);
+      if (!item) continue;
+      mesh.name = `ObjectBVH:${item.kind}`;
+      mesh.material.color.set(item.color);
+      mesh.position.copy(item.position);
+      mesh.scale.setScalar(item.radius);
+    }
+  }
+
+  ensurePool(count) {
+    while (this.pool.length < count) {
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 18, 10),
+        new THREE.MeshBasicMaterial({
+          color: '#ffffff',
+          transparent: true,
+          opacity: 0.32,
+          wireframe: true,
+          depthWrite: false
+        })
+      );
+      mesh.name = 'ObjectBVH:unused';
+      this.pool.push(mesh);
+      this.group.add(mesh);
+    }
+  }
+
+  dispose() {
+    disposeObject3D(this.group);
+  }
+}
+
+function debugItems(items, color, kind) {
+  return items.map((item) => ({
+    color,
+    kind,
+    position: item.mesh.position,
+    radius: item.radius
+  }));
+}

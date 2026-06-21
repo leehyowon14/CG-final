@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { createPlayerHBV, hbvHit, HBVDebugVisualizer } from './HBV.js';
+import { createPlayerHBV, hbvHit, HBVDebugVisualizer, ObjectBoundsDebugVisualizer } from './HBV.js';
 
 describe('HierarchicalBoundingVolume', () => {
   it('hits child volumes after passing the broad root volume', () => {
@@ -51,6 +51,50 @@ describe('HierarchicalBoundingVolume', () => {
     expect(debug.childMeshes.every((mesh) => mesh.name.startsWith('PlayerHBVMesh:'))).toBe(true);
     expect(debug.childMeshes.every((mesh) => mesh.geometry.type === 'BoxGeometry')).toBe(true);
     expect(debug.links).toHaveLength(hbv.children.length);
+
+    debug.dispose();
+  });
+
+  it('creates world-space debug spheres for active object bounds', () => {
+    const debug = new ObjectBoundsDebugVisualizer();
+    const makeItem = (x, radius) => ({
+      radius,
+      mesh: { position: new THREE.Vector3(x, 0, -6) }
+    });
+
+    debug.update(
+      {
+        enemies: { items: [makeItem(1, 0.75)] },
+        obstacles: { items: [makeItem(2, 1.7)] },
+        pickups: { items: [makeItem(3, 0.8)] },
+        projectiles: { items: [makeItem(4, 0.16)] }
+      },
+      true
+    );
+
+    expect(debug.group.name).toBe('ObjectBVHDebug');
+    expect(debug.group.visible).toBe(true);
+    expect(debug.group.children).toHaveLength(4);
+    expect(debug.group.children.map((child) => child.name)).toEqual([
+      'ObjectBVH:enemy',
+      'ObjectBVH:obstacle',
+      'ObjectBVH:pickup',
+      'ObjectBVH:projectile'
+    ]);
+    expect(debug.group.children[1].scale.x).toBeCloseTo(1.7);
+
+    debug.update(
+      {
+        enemies: { items: [] },
+        obstacles: { items: [] },
+        pickups: { items: [] },
+        projectiles: { items: [] }
+      },
+      false
+    );
+
+    expect(debug.group.visible).toBe(false);
+    expect(debug.group.children.every((child) => !child.visible)).toBe(true);
 
     debug.dispose();
   });
