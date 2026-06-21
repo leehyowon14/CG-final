@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export function createSceneSetup(root) {
   const scene = new THREE.Scene();
-  const fog = new THREE.Fog('#082b34', 14, 38);
+  const fog = new THREE.Fog('#082b34', 20, 56);
   scene.fog = fog;
 
   const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 120);

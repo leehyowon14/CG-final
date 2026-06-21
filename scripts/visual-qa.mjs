@@ -857,6 +857,10 @@ async function checkCameraCycle(page) {
     game.updateFogForCameraMode();
     return game.cameraRig.mode.id === 'current' && game.setup.scene.fog !== null;
   });
+  const currentFogRange = await page.evaluate(() => {
+    const fog = window['__RIFT_AVIATOR__'].setup.fog;
+    return { near: fog.near, far: fog.far };
+  });
   return {
     name: 'V cycles camera view',
     passed:
@@ -865,8 +869,10 @@ async function checkCameraCycle(page) {
       afterSecond === 'chase' &&
       afterThird === 'top' &&
       topFogDisabled &&
-      currentFogRestored,
-    detail: `${before} -> ${afterFirst} -> ${afterSecond} -> ${afterThird}, topFogDisabled=${topFogDisabled}, currentFogRestored=${currentFogRestored}`
+      currentFogRestored &&
+      currentFogRange.near >= 20 &&
+      currentFogRange.far >= 56,
+    detail: `${before} -> ${afterFirst} -> ${afterSecond} -> ${afterThird}, topFogDisabled=${topFogDisabled}, currentFogRestored=${currentFogRestored}, fog=${currentFogRange.near}/${currentFogRange.far}`
   };
 }
 
