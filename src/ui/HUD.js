@@ -14,7 +14,11 @@ export class HUD {
         <div class="bar bar--shield"><i data-shield-bar></i></div>
         <div class="metric"><span>Ammo</span><b data-ammo>24</b></div>
       </section>
-      <section class="hud__panel hud__panel--center">
+      <section class="hud__panel hud__panel--controls">
+        <div class="control-row"><b>WASD</b><span>이동</span></div>
+        <div class="control-row"><b>1 2 3</b><span>차원 전환</span></div>
+      </section>
+      <section class="hud__panel hud__panel--dimension">
         <div class="dimension" data-dimension>안정</div>
         <div class="dimension-description" data-dimension-description></div>
         <div class="stacks" data-stacks></div>
