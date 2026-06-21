@@ -117,6 +117,8 @@ try {
   checks.push(await checkRiftAlphaFadesBeforePass(page, 'combat'));
   checks.push(await checkDimensionPortalTraversal(page, 'combat', 'Digit2 switches to combat after portal traversal'));
   checks.push(await checkEnemyHealthBars(page));
+  checks.push(await checkPickupVisualIdentity(page));
+  await page.screenshot({ path: `${screenshotDir}/18_green_pickups.png` });
   await page.screenshot({ path: `${screenshotDir}/02_combat_dimension.png` });
 
   await page.waitForTimeout(500);
@@ -648,6 +650,60 @@ async function checkEnemyHealthBars(page) {
   };
 }
 
+async function checkPickupVisualIdentity(page) {
+  const stats = await page.evaluate(() => {
+    const game = window['__RIFT_AVIATOR__'];
+    game.pickups.reset();
+    game.pickups.spawnPickup('combat');
+    game.pickups.spawnPickup('phase');
+    game.pickups.spawnPickup('stability');
+    const positions = [
+      { x: -1.8, y: 0.45, z: 7.2 },
+      { x: 0.0, y: 0.55, z: 8.4 },
+      { x: 1.8, y: 0.45, z: 7.2 }
+    ];
+
+    game.pickups.items.forEach((pickup, index) => {
+      pickup.mesh.position.set(positions[index].x, positions[index].y, positions[index].z);
+      pickup.mesh.rotation.set(0.45, index * 0.8, 0);
+    });
+    game.render();
+
+    return game.pickups.items.map((pickup) => {
+      const meshes = [];
+      pickup.mesh.traverse((child) => {
+        if (child.isMesh) meshes.push(child);
+      });
+      const standardMaterials = meshes.map((mesh) => mesh.material).filter((material) => material.isMeshStandardMaterial);
+      const light = pickup.mesh.getObjectByName('PickupGreenLight');
+      return {
+        kind: pickup.kind,
+        collectible: pickup.mesh.userData.collectible === true,
+        greenMeshCount: meshes.filter((mesh) => mesh.material.color?.getHexString() === '35f27a').length,
+        meshCount: meshes.length,
+        emissiveCount: standardMaterials.filter((material) => material.emissive?.getHexString() === '35f27a' && material.emissiveIntensity >= 2).length,
+        standardCount: standardMaterials.length,
+        hasGreenLight: Boolean(light?.isPointLight && light.color.getHexString() === '35f27a' && light.intensity > 0.5)
+      };
+    });
+  });
+
+  const passed = stats.length >= 3 && stats.every((pickup) => (
+    pickup.collectible &&
+    pickup.meshCount > 0 &&
+    pickup.greenMeshCount === pickup.meshCount &&
+    pickup.standardCount > 0 &&
+    pickup.emissiveCount === pickup.standardCount &&
+    pickup.hasGreenLight
+  ));
+
+  return {
+    name: 'collectible pickups are green and self-lit',
+    passed,
+    detail: stats.map((pickup) => `${pickup.kind}: green=${pickup.greenMeshCount}/${pickup.meshCount}, emissive=${pickup.emissiveCount}/${pickup.standardCount}, light=${pickup.hasGreenLight}`).join('; ')
+  };
+}
+
 async function seedPreviousDimensionObjects(page) {
   await page.evaluate(() => {
     const game = window['__RIFT_AVIATOR__'];
@@ -805,6 +861,7 @@ ${rows}
 - [Rift first person](./screenshots/15_rift_first_person.png)
 - [Rift chase](./screenshots/16_rift_chase.png)
 - [Rift top](./screenshots/17_rift_top.png)
+- [Green pickups](./screenshots/18_green_pickups.png)
 `;
   await writeFile(reportPath, body);
 }

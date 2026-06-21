@@ -337,14 +337,47 @@ export function createObstacleModel(kind) {
 }
 
 export function createPickupModel(kind) {
-  const color = kind === 'ammo' ? '#a46cff' : kind === 'shield' ? '#47a7ff' : kind === 'power' ? '#ff8a35' : '#35d67a';
+  const color = '#35f27a';
   const group = new THREE.Group();
-  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 1), createEnergyMaterial(color, { emissiveIntensity: 1.65 }));
+  group.name = 'CollectiblePickup';
+  group.userData.kind = kind;
+  group.userData.collectible = true;
+
+  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.46, 1), createEnergyMaterial(color, { emissiveIntensity: 3.1, roughness: 0.22, metalness: 0.12 }));
+  core.name = 'PickupGreenCore';
+  const glowMaterial = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.82,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false
+  });
   const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.62, 0.045, 8, 24),
-    createEnergyMaterial(color, { emissiveIntensity: 1.15, transparent: true, opacity: 0.88 })
+    new THREE.TorusGeometry(0.72, 0.055, 8, 28),
+    glowMaterial
   );
+  ring.name = 'PickupGreenRing';
+  const verticalRing = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.035, 8, 28), glowMaterial.clone());
+  verticalRing.name = 'PickupGreenVerticalRing';
+  const halo = new THREE.Mesh(
+    new THREE.SphereGeometry(1.05, 24, 12),
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.34,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false
+    })
+  );
+  halo.name = 'PickupGreenHalo';
+  const light = new THREE.PointLight(color, 1.25, 5.0, 1.9);
+  light.name = 'PickupGreenLight';
+  light.userData.glowColor = color;
+  light.userData.glowIntensity = light.intensity;
   ring.rotation.x = Math.PI / 2;
-  group.add(core, ring);
+  verticalRing.rotation.y = Math.PI / 2;
+  group.add(halo, core, ring, verticalRing, light);
   return group;
 }
