@@ -16,6 +16,7 @@ export class HUD {
       </section>
       <section class="hud__panel hud__panel--center">
         <div class="dimension" data-dimension>안정</div>
+        <div class="dimension-description" data-dimension-description></div>
         <div class="stacks" data-stacks></div>
         <div class="warning" data-warning></div>
       </section>
@@ -26,6 +27,7 @@ export class HUD {
         <div class="toggles">
           <span>V View</span>
           <span data-ddgi-toggle>G DDGI</span>
+          <span data-hbv-toggle>B HBV</span>
           <span data-gi-toggle>H GI</span>
           <span data-panels-toggle>P Panels</span>
           <span>R Restart</span>
@@ -44,12 +46,14 @@ export class HUD {
       shieldBar: this.find('[data-shield-bar]'),
       ammo: this.find('[data-ammo]'),
       dimension: this.find('[data-dimension]'),
+      dimensionDescription: this.find('[data-dimension-description]'),
       stacks: this.find('[data-stacks]'),
       warning: this.find('[data-warning]'),
       score: this.find('[data-score]'),
       best: this.find('[data-best]'),
       kills: this.find('[data-kills]'),
       ddgiToggle: this.find('[data-ddgi-toggle]'),
+      hbvToggle: this.find('[data-hbv-toggle]'),
       giToggle: this.find('[data-gi-toggle]'),
       panelsToggle: this.find('[data-panels-toggle]'),
       gameOver: this.find('[data-game-over]')
@@ -73,6 +77,7 @@ export class HUD {
     this.refs.shieldBar.style.width = `${(this.state.shield / GAME_CONFIG.player.maxShield) * 100}%`;
     this.refs.ammo.textContent = `${this.state.ammo}`;
     this.refs.dimension.textContent = `${dimension.label} 차원`;
+    this.refs.dimensionDescription.textContent = dimension.description;
     this.refs.stacks.textContent = `Stacks ${'◆'.repeat(this.state.dimensionStacks)}${'◇'.repeat(
       GAME_CONFIG.dimension.maxStacks - this.state.dimensionStacks
     )}`;
@@ -82,6 +87,8 @@ export class HUD {
     this.refs.kills.textContent = `${this.state.kills}`;
     this.refs.ddgiToggle.classList.toggle('is-active', this.state.ddgiDebug);
     this.refs.ddgiToggle.setAttribute('aria-pressed', `${this.state.ddgiDebug}`);
+    this.refs.hbvToggle.classList.toggle('is-active', this.state.hbvDebug);
+    this.refs.hbvToggle.setAttribute('aria-pressed', `${this.state.hbvDebug}`);
     this.refs.giToggle.classList.toggle('is-active', this.state.giEnabled);
     this.refs.giToggle.setAttribute('aria-pressed', `${this.state.giEnabled}`);
     this.refs.panelsToggle.classList.toggle('is-active', this.state.receiverPanelsVisible);

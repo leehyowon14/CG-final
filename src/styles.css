@@ -176,8 +176,18 @@ canvas {
   font-weight: 800;
 }
 
+.dimension-description {
+  width: min(320px, calc(100vw - 48px));
+  margin-top: 5px;
+  color: #d7edf5;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
 .stacks {
-  margin-top: 8px;
+  margin-top: 7px;
   font-size: 13px;
   color: #d7edf5;
 }

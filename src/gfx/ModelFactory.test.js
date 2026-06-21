@@ -13,7 +13,6 @@ describe('createPickupModel', () => {
   it.each(['ammo', 'shield', 'power', 'health'])('renders %s pickups as green glowing collectibles', (kind) => {
     const pickup = createPickupModel(kind);
     const meshes = collectMeshes(pickup);
-    const light = pickup.getObjectByName('PickupGreenLight');
     const standardMaterials = meshes.map((mesh) => mesh.material).filter((material) => material.isMeshStandardMaterial);
 
     expect(pickup.name).toBe('CollectiblePickup');
@@ -22,8 +21,6 @@ describe('createPickupModel', () => {
     expect(standardMaterials.length).toBeGreaterThan(0);
     expect(standardMaterials.every((material) => material.emissive.getHexString() === '35f27a')).toBe(true);
     expect(standardMaterials.every((material) => material.emissiveIntensity >= 2)).toBe(true);
-    expect(light?.type).toBe('PointLight');
-    expect(light?.userData.glowColor).toBe('#35f27a');
-    expect(light?.userData.glowIntensity).toBeGreaterThan(0.5);
+    expect(pickup.getObjectByName('PickupGreenLight')).toBeUndefined();
   });
 });

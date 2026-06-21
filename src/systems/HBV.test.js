@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { createPlayerHBV, hbvHit } from './HBV.js';
+import { createPlayerHBV, hbvHit, HBVDebugVisualizer } from './HBV.js';
 
 describe('HierarchicalBoundingVolume', () => {
   it('hits child volumes after passing the broad root volume', () => {
     const hbv = createPlayerHBV();
 
-    expect(hbvHit(hbv, new THREE.Vector3(0, 0, -6), new THREE.Vector3(0.92, 0, -6.18), 0.18)).toBe(true);
+    expect(hbvHit(hbv, new THREE.Vector3(0, 0, -6), new THREE.Vector3(0.72, -0.18, -6.2), 0.18)).toBe(true);
   });
 
   it('rejects targets outside the broad root volume', () => {
@@ -18,16 +18,40 @@ describe('HierarchicalBoundingVolume', () => {
   it('rejects broad-root near misses outside child volumes', () => {
     const hbv = createPlayerHBV();
 
-    expect(hbvHit(hbv, new THREE.Vector3(0, 0, -6), new THREE.Vector3(1.18, 0, -5.28), 0.16)).toBe(false);
+    expect(hbvHit(hbv, new THREE.Vector3(0, 0, -6), new THREE.Vector3(1.1, 0, -5.28), 0.16)).toBe(false);
   });
 
   it('rotates child volumes with the player orientation', () => {
     const hbv = createPlayerHBV();
     const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
     const root = new THREE.Vector3(0, 0, -6);
-    const rotatedWingTarget = new THREE.Vector3(0, -0.82, -6.18);
+    const rotatedPodTarget = new THREE.Vector3(0.18, 0.7, -6.2);
 
-    expect(hbvHit(hbv, root, rotatedWingTarget, 0.16)).toBe(false);
-    expect(hbvHit(hbv, root, rotatedWingTarget, 0.16, rotation)).toBe(true);
+    expect(hbvHit(hbv, root, rotatedPodTarget, 0.16)).toBe(false);
+    expect(hbvHit(hbv, root, rotatedPodTarget, 0.16, rotation)).toBe(true);
+  });
+
+  it('creates a toggleable mesh debug hierarchy with root, child meshes, and links', () => {
+    const hbv = createPlayerHBV();
+    const debug = new HBVDebugVisualizer(hbv);
+    const position = new THREE.Vector3(1, 2, 3);
+    const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), 0.4);
+
+    debug.update(position, rotation, true);
+
+    expect(debug.group.name).toBe('PlayerHBVDebug');
+    expect(debug.group.visible).toBe(true);
+    expect(debug.group.position).toEqual(position);
+    expect(debug.group.quaternion.angleTo(rotation)).toBeLessThan(0.001);
+    expect(debug.group.getObjectByName('PlayerHBVBroadPhase')).toBe(debug.rootMesh);
+    expect(debug.rootMesh.geometry.type).toBe('BoxGeometry');
+    expect(debug.rootMesh.geometry.parameters.width).toBeLessThan(1.8);
+    expect(debug.rootMesh.geometry.parameters.depth).toBeLessThan(2.8);
+    expect(debug.childMeshes).toHaveLength(hbv.children.length);
+    expect(debug.childMeshes.every((mesh) => mesh.name.startsWith('PlayerHBVMesh:'))).toBe(true);
+    expect(debug.childMeshes.every((mesh) => mesh.geometry.type === 'BoxGeometry')).toBe(true);
+    expect(debug.links).toHaveLength(hbv.children.length);
+
+    debug.dispose();
   });
 });

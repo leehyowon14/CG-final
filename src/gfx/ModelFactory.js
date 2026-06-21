@@ -372,12 +372,8 @@ export function createPickupModel(kind) {
     })
   );
   halo.name = 'PickupGreenHalo';
-  const light = new THREE.PointLight(color, 1.25, 5.0, 1.9);
-  light.name = 'PickupGreenLight';
-  light.userData.glowColor = color;
-  light.userData.glowIntensity = light.intensity;
   ring.rotation.x = Math.PI / 2;
   verticalRing.rotation.y = Math.PI / 2;
-  group.add(halo, core, ring, verticalRing, light);
+  group.add(halo, core, ring, verticalRing);
   return group;
 }

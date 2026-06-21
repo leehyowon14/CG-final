@@ -53,8 +53,10 @@ try {
   checks.push(await checkCanvasNotBlank(page, 'stability canvas nonblank'));
   checks.push(await checkGIReceiverPanels(page));
   checks.push(await checkReceiverPanelToggleAndAnchor(page));
-  checks.push(await checkToggleBorders(page, { gi: true, ddgi: false, panels: false }, 'GI toggle starts highlighted and DDGI starts idle'));
+  checks.push(await checkHBVDebugToggle(page));
+  checks.push(await checkToggleBorders(page, { gi: true, ddgi: false, hbv: false, panels: false }, 'GI toggle starts highlighted and DDGI/HBV starts idle'));
   checks.push(await expectText(page, '[data-dimension]', '안정 차원', 'starts in stability dimension'));
+  checks.push(await expectText(page, '[data-dimension-description]', '회복과 재정비', 'stability dimension explains its role'));
   checks.push(await checkWorldScrollTravel(page));
   checks.push(await checkMovementKey(page, 'KeyA', 'x', 'increase', 'A maps to screen left'));
   checks.push(await checkMovementKey(page, 'KeyD', 'x', 'decrease', 'D maps to screen right'));
@@ -118,6 +120,7 @@ try {
   checks.push(await checkDimensionPortalTraversal(page, 'combat', 'Digit2 switches to combat after portal traversal'));
   checks.push(await checkEnemyHealthBars(page));
   checks.push(await checkPickupVisualIdentity(page));
+  checks.push(await expectText(page, '[data-dimension-description]', '고득점 전투', 'combat dimension explains its role'));
   await page.screenshot({ path: `${screenshotDir}/18_green_pickups.png` });
   await page.screenshot({ path: `${screenshotDir}/02_combat_dimension.png` });
 
@@ -128,25 +131,26 @@ try {
   checks.push(await expectText(page, '[data-dimension]', '전투 차원', 'Digit3 keeps current dimension until portal traversal'));
   checks.push(await checkRiftAlphaFadesBeforePass(page, 'phase'));
   checks.push(await checkDimensionPortalTraversal(page, 'phase', 'Digit3 switches to phase after portal traversal'));
+  checks.push(await expectText(page, '[data-dimension-description]', '회피와 수급', 'phase dimension explains its role'));
   await page.screenshot({ path: `${screenshotDir}/03_phase_dimension.png` });
 
   await page.keyboard.press('KeyG');
   await page.waitForTimeout(250);
   await page.screenshot({ path: `${screenshotDir}/08_surfel_debug.png` });
   checks.push(await checkCanvasNotBlank(page, 'DDGI debug canvas nonblank'));
-  checks.push(await checkToggleBorders(page, { gi: true, ddgi: true, panels: false }, 'G highlights DDGI toggle label'));
+  checks.push(await checkToggleBorders(page, { gi: true, ddgi: true, hbv: false, panels: false }, 'G highlights DDGI toggle label'));
   await page.keyboard.press('KeyG');
   await page.waitForTimeout(100);
 
   await page.keyboard.press('KeyH');
   await page.waitForTimeout(250);
   const giOffState = await captureGIState(page);
-  checks.push(await checkToggleBorders(page, { gi: false, ddgi: false, panels: false }, 'H clears GI toggle highlight'));
+  checks.push(await checkToggleBorders(page, { gi: false, ddgi: false, hbv: false, panels: false }, 'H clears GI toggle highlight'));
   await page.screenshot({ path: `${screenshotDir}/09_gi_off.png` });
   await page.keyboard.press('KeyH');
   await page.waitForTimeout(250);
   const giOnState = await captureGIState(page);
-  checks.push(await checkToggleBorders(page, { gi: true, ddgi: false, panels: false }, 'H restores GI toggle highlight'));
+  checks.push(await checkToggleBorders(page, { gi: true, ddgi: false, hbv: false, panels: false }, 'H restores GI toggle highlight'));
   await page.screenshot({ path: `${screenshotDir}/10_gi_on.png` });
   checks.push({
     name: 'GI toggle updates DDGI shader state',
@@ -348,26 +352,91 @@ async function panelRelativeSample(page) {
   });
 }
 
+async function checkHBVDebugToggle(page) {
+  const initial = await hbvDebugStats(page);
+  await page.keyboard.press('KeyB');
+  await page.waitForTimeout(120);
+  const visible = await hbvDebugStats(page);
+  await page.screenshot({ path: `${screenshotDir}/19_hbv_debug.png` });
+  await page.keyboard.press('KeyB');
+  await page.waitForTimeout(80);
+  const hidden = await hbvDebugStats(page);
+
+  return {
+    name: 'B toggles player HBV hierarchy debug',
+    passed:
+      !initial.stateVisible &&
+      !initial.groupVisible &&
+      !initial.hudActive &&
+      visible.stateVisible &&
+      visible.groupVisible &&
+      visible.hudActive &&
+      visible.broadPhaseCount === 1 &&
+      visible.broadPhaseBoxCount === 1 &&
+      visible.broadPhaseWidth <= 1.8 &&
+      visible.broadPhaseDepth <= 2.8 &&
+      visible.meshCount >= 5 &&
+      visible.boxMeshCount === visible.meshCount &&
+      visible.linkCount === visible.meshCount &&
+      visible.positionDelta < 0.001 &&
+      !hidden.stateVisible &&
+      !hidden.groupVisible &&
+      !hidden.hudActive,
+    detail: `visible ${initial.groupVisible}->${visible.groupVisible}->${hidden.groupVisible}, hud=${initial.hudActive}->${visible.hudActive}->${hidden.hudActive}, broad=${visible.broadPhaseCount}/${visible.broadPhaseBoxCount} ${visible.broadPhaseWidth.toFixed(2)}x${visible.broadPhaseDepth.toFixed(2)}, meshes=${visible.meshCount}, boxes=${visible.boxMeshCount}, links=${visible.linkCount}, delta=${visible.positionDelta.toFixed(4)}`
+  };
+}
+
+async function hbvDebugStats(page) {
+  return page.evaluate(() => {
+    const { document } = globalThis;
+    const game = window['__RIFT_AVIATOR__'];
+    game.hbvDebug.update(game.player.group.position, game.player.group.quaternion, game.state.hbvDebug);
+    const group = game.hbvDebug.group;
+    const delta = group.position.distanceTo(game.player.group.position);
+    const hbvToggle = document.querySelector('[data-hbv-toggle]');
+    return {
+      stateVisible: game.state.hbvDebug,
+      groupVisible: group.visible,
+      hudActive: hbvToggle?.classList.contains('is-active') ?? false,
+      broadPhaseCount: group.children.filter((child) => child.name === 'PlayerHBVBroadPhase').length,
+      broadPhaseBoxCount: group.children.filter((child) => child.name === 'PlayerHBVBroadPhase' && child.geometry?.type === 'BoxGeometry').length,
+      broadPhaseWidth: game.hbvDebug.rootMesh.geometry.parameters.width,
+      broadPhaseDepth: game.hbvDebug.rootMesh.geometry.parameters.depth,
+      meshCount: group.children.filter((child) => child.name.startsWith('PlayerHBVMesh:')).length,
+      boxMeshCount: group.children.filter((child) => child.name.startsWith('PlayerHBVMesh:') && child.geometry?.type === 'BoxGeometry').length,
+      linkCount: group.children.filter((child) => child.name.startsWith('PlayerHBVLink:')).length,
+      positionDelta: delta
+    };
+  });
+}
+
 async function checkToggleBorders(page, expected, name) {
   const state = await page.evaluate(() => {
     const { document, getComputedStyle } = globalThis;
     const gi = document.querySelector('[data-gi-toggle]');
     const ddgi = document.querySelector('[data-ddgi-toggle]');
+    const hbv = document.querySelector('[data-hbv-toggle]');
     const panels = document.querySelector('[data-panels-toggle]');
     return {
       giActive: gi?.classList.contains('is-active') ?? false,
       ddgiActive: ddgi?.classList.contains('is-active') ?? false,
+      hbvActive: hbv?.classList.contains('is-active') ?? false,
       panelsActive: panels?.classList.contains('is-active') ?? false,
       giBorder: gi ? getComputedStyle(gi).borderColor : '',
       ddgiBorder: ddgi ? getComputedStyle(ddgi).borderColor : '',
+      hbvBorder: hbv ? getComputedStyle(hbv).borderColor : '',
       panelsBorder: panels ? getComputedStyle(panels).borderColor : ''
     };
   });
 
   return {
     name,
-    passed: state.giActive === expected.gi && state.ddgiActive === expected.ddgi && state.panelsActive === expected.panels,
-    detail: `GI=${state.giActive} ${state.giBorder}, DDGI=${state.ddgiActive} ${state.ddgiBorder}, Panels=${state.panelsActive} ${state.panelsBorder}`
+    passed:
+      state.giActive === expected.gi &&
+      state.ddgiActive === expected.ddgi &&
+      state.hbvActive === expected.hbv &&
+      state.panelsActive === expected.panels,
+    detail: `GI=${state.giActive} ${state.giBorder}, DDGI=${state.ddgiActive} ${state.ddgiBorder}, HBV=${state.hbvActive} ${state.hbvBorder}, Panels=${state.panelsActive} ${state.panelsBorder}`
   };
 }
 
@@ -675,7 +744,6 @@ async function checkPickupVisualIdentity(page) {
         if (child.isMesh) meshes.push(child);
       });
       const standardMaterials = meshes.map((mesh) => mesh.material).filter((material) => material.isMeshStandardMaterial);
-      const light = pickup.mesh.getObjectByName('PickupGreenLight');
       return {
         kind: pickup.kind,
         collectible: pickup.mesh.userData.collectible === true,
@@ -683,7 +751,7 @@ async function checkPickupVisualIdentity(page) {
         meshCount: meshes.length,
         emissiveCount: standardMaterials.filter((material) => material.emissive?.getHexString() === '35f27a' && material.emissiveIntensity >= 2).length,
         standardCount: standardMaterials.length,
-        hasGreenLight: Boolean(light?.isPointLight && light.color.getHexString() === '35f27a' && light.intensity > 0.5)
+        sceneLightCount: pickup.mesh.children.filter((child) => child.isLight).length
       };
     });
   });
@@ -694,13 +762,13 @@ async function checkPickupVisualIdentity(page) {
     pickup.greenMeshCount === pickup.meshCount &&
     pickup.standardCount > 0 &&
     pickup.emissiveCount === pickup.standardCount &&
-    pickup.hasGreenLight
+    pickup.sceneLightCount === 0
   ));
 
   return {
-    name: 'collectible pickups are green and self-lit',
+    name: 'collectible pickups are green self-lit markers without scene lights',
     passed,
-    detail: stats.map((pickup) => `${pickup.kind}: green=${pickup.greenMeshCount}/${pickup.meshCount}, emissive=${pickup.emissiveCount}/${pickup.standardCount}, light=${pickup.hasGreenLight}`).join('; ')
+    detail: stats.map((pickup) => `${pickup.kind}: green=${pickup.greenMeshCount}/${pickup.meshCount}, emissive=${pickup.emissiveCount}/${pickup.standardCount}, sceneLights=${pickup.sceneLightCount}`).join('; ')
   };
 }
 
@@ -862,6 +930,7 @@ ${rows}
 - [Rift chase](./screenshots/16_rift_chase.png)
 - [Rift top](./screenshots/17_rift_top.png)
 - [Green pickups](./screenshots/18_green_pickups.png)
+- [HBV debug](./screenshots/19_hbv_debug.png)
 `;
   await writeFile(reportPath, body);
 }
