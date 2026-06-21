@@ -82,7 +82,7 @@ export class PlayerShip {
 
     this.dimensionWarp.elapsed = Math.min(WARP_DURATION, this.dimensionWarp.elapsed + delta);
     const t = this.dimensionWarp.elapsed / WARP_DURATION;
-    const eased = 1 - (1 - t) ** 3;
+    const eased = smootherStep(t);
     const distance = WARP_DISTANCE * eased;
     const deltaDistance = distance - this.dimensionWarp.previousDistance;
     this.worldTravelSpeed = delta > 0 ? deltaDistance / delta : 0;
@@ -121,4 +121,8 @@ export class PlayerShip {
   flashHit() {
     this.hitFlash = 0.22;
   }
+}
+
+function smootherStep(t) {
+  return t * t * t * (t * (t * 6 - 15) + 10);
 }

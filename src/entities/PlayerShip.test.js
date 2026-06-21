@@ -65,4 +65,25 @@ describe('PlayerShip', () => {
     expect(ship.group.position.z).toBe(ship.anchor.z);
     expect(ship.worldTravelSpeed).toBeGreaterThan(0);
   });
+
+  it('ramps portal warp speed up and down smoothly', () => {
+    const ship = new PlayerShip();
+    const state = new GameState();
+    const speeds = [];
+
+    ship.startDimensionWarp();
+    for (let index = 0; index < 45; index += 1) {
+      ship.update(0.016, inputWithKeys([]), state);
+      speeds.push(ship.worldTravelSpeed);
+    }
+
+    const peakSpeed = Math.max(...speeds);
+    const firstSpeed = speeds[0];
+    const lastSpeed = speeds.at(-1);
+
+    expect(firstSpeed).toBeLessThan(peakSpeed * 0.1);
+    expect(lastSpeed).toBeLessThan(peakSpeed * 0.1);
+    expect(peakSpeed).toBeGreaterThan(20);
+    expect(ship.dimensionWarp).toBeNull();
+  });
 });
