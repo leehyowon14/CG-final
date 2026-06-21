@@ -6,6 +6,7 @@ Rift Aviator: Dimension Shift 기획 문서 루트입니다.
 
 ## 문서
 
+- [최종 단일 리포트](./FINAL_REPORT.md)
 - [제출용 리포트 인덱스](./report/README.md)
 - [Ralph loop 구현 성공 조건](./report/09_ralph_success_criteria.md)
 - [구현용 세부 성공 조건](./specs/README.md)
