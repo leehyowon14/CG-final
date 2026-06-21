@@ -17,8 +17,11 @@ import { DimensionManager } from '../systems/DimensionManager.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
 import { DDGIManager } from '../systems/DDGIManager.js';
 import { DimensionRiftSystem } from '../systems/DimensionRiftSystem.js';
+import { FadeOutSystem } from '../systems/FadeOutSystem.js';
 import { HUD } from '../ui/HUD.js';
 import { ParticleBurst } from '../gfx/Particles.js';
+
+const PRE_PASS_FADE_DURATION = 0.68;
 
 export class Game {
   constructor(root) {
@@ -40,6 +43,7 @@ export class Game {
     this.scoreSystem = new ScoreSystem(this.state);
     this.ddgi = new DDGIManager(this.setup.scene);
     this.dimensionRifts = new DimensionRiftSystem(this.setup.scene);
+    this.fadeOutObjects = new FadeOutSystem(this.setup.scene);
     this.particles = new ParticleBurst(this.setup.scene);
     this.collisionSystem = new CollisionSystem(this.state);
     this.hud = new HUD(root, this.state);
@@ -91,6 +95,7 @@ export class Game {
         this.dimensionTransition = request;
         this.dimensionRifts.spawn(this.player.group.position, request.from, request.to, this.setup.camera);
         this.player.startDimensionWarp();
+        this.fadeDimensionObjectsBeforePass();
         const riftPosition = this.player.group.position.clone();
         riftPosition.y += 0.85;
         riftPosition.z += 7.2;
@@ -104,21 +109,25 @@ export class Game {
       this.state.elapsed += delta;
       this.player.update(delta, this.input, this.state);
       worldTravelSpeed = this.player.worldTravelSpeed;
-      this.projectiles.update(delta, this.input, this.player, this.state);
-      this.enemies.update(delta, this.state, worldTravelSpeed, this.setup.camera);
-      this.obstacles.update(delta, this.state, worldTravelSpeed);
-      this.pickups.update(delta, this.state, worldTravelSpeed);
+      if (!this.dimensionTransition) {
+        this.projectiles.update(delta, this.input, this.player, this.state);
+        this.enemies.update(delta, this.state, worldTravelSpeed, this.setup.camera);
+        this.obstacles.update(delta, this.state, worldTravelSpeed);
+        this.pickups.update(delta, this.state, worldTravelSpeed);
+      }
       this.dimensionRifts.update(delta, this.setup.camera, worldTravelSpeed, this.player.group.position);
       this.completeDimensionTransitionIfPassed();
-      const collisionEvents = this.collisionSystem.update({
-        player: this.player,
-        projectiles: this.projectiles,
-        enemies: this.enemies,
-        obstacles: this.obstacles,
-        pickups: this.pickups,
-        gi: this.ddgi
-      });
-      this.handleCollisionEvents(collisionEvents);
+      if (!this.dimensionTransition) {
+        const collisionEvents = this.collisionSystem.update({
+          player: this.player,
+          projectiles: this.projectiles,
+          enemies: this.enemies,
+          obstacles: this.obstacles,
+          pickups: this.pickups,
+          gi: this.ddgi
+        });
+        this.handleCollisionEvents(collisionEvents);
+      }
       this.scoreSystem.update(delta);
     } else {
       this.player.worldTravelSpeed = 0;
@@ -132,6 +141,7 @@ export class Game {
     this.ddgi.update(delta, this.state);
 
     this.particles.update(delta);
+    this.fadeOutObjects.update(delta);
     this.cameraRig.update(delta, this.player.group.position);
     this.hud.update();
   }
@@ -140,9 +150,8 @@ export class Game {
     if (!this.dimensionTransition) return;
     if (this.dimensionRifts.hasPassedThrough(this.player.group.position, this.dimensionTransition.to)) {
       this.dimensionManager.completeSwitch(this.dimensionTransition.to);
-      this.clearDimensionObjects();
-      this.player.dimensionWarp = null;
-      this.player.worldTravelSpeed = 0;
+      this.fadeOutObjects.reset();
+      this.player.finishDimensionWarp();
       const riftPosition = this.player.group.position.clone();
       riftPosition.y += 1.3;
       this.ddgi.flash(riftPosition, this.state.dimensionConfig.color);
@@ -155,10 +164,19 @@ export class Game {
   }
 
   clearDimensionObjects() {
-    this.enemies.reset();
-    this.obstacles.reset();
-    this.pickups.reset();
-    this.projectiles.reset();
+    this.fadeDimensionObjectsBeforePass(0);
+  }
+
+  fadeDimensionObjectsBeforePass(duration = PRE_PASS_FADE_DURATION) {
+    const objects = [
+      ...this.enemies.drain(),
+      ...this.obstacles.drain(),
+      ...this.pickups.drain(),
+      ...this.projectiles.drain()
+    ];
+    for (const object of objects) {
+      this.fadeOutObjects.add(object, duration);
+    }
   }
 
   handleCollisionEvents(events) {
@@ -186,6 +204,7 @@ export class Game {
     this.dimensionRifts.reset();
     this.dimensionTransition = null;
     this.particles.reset();
+    this.fadeOutObjects.reset();
     this.applyLaunchParams();
   }
 
@@ -260,6 +279,7 @@ export class Game {
     this.input.dispose();
     this.hud.dispose();
     this.dimensionRifts.dispose();
+    this.fadeOutObjects.reset();
     this.ddgi.dispose();
     this.environmentMap.dispose();
     this.setup.renderer.dispose();

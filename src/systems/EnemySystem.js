@@ -85,6 +85,13 @@ export class EnemySystem {
     disposeObject3D(enemy.mesh);
   }
 
+  drain() {
+    const items = this.items.splice(0);
+    this.spawnTimer = 1.2;
+    this.bossTimer = 10;
+    return items.map((enemy) => enemy.mesh);
+  }
+
   reset() {
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       this.removeAt(i);

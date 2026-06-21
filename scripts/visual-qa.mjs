@@ -108,6 +108,7 @@ try {
   await page.waitForTimeout(120);
   checks.push(await expectText(page, '[data-dimension]', '안정 차원', 'Digit2 keeps current dimension until portal traversal'));
   checks.push(await expectText(page, '[data-stacks]', 'Stacks ◆◆◇', 'dimension switch spends one stack'));
+  checks.push(await checkTransitionObjectsFadeBeforePass(page));
   checks.push(await checkDimensionRift(page));
   checks.push(await checkRiftVerticalTravelPlaneAcrossCameraModes(page));
   checks.push(await checkRiftAlphaFadesBeforePass(page, 'combat'));
@@ -424,14 +425,20 @@ async function checkDimensionPortalTraversal(page, expectedDimension, name) {
       riftZ: rift?.group.position.z ?? null,
       transitionActive: Boolean(game.dimensionTransition),
       warpActive: Boolean(game.player.dimensionWarp),
+      warpPhase: game.player.dimensionWarp?.phase ?? 'none',
+      worldTravelSpeed: game.player.worldTravelSpeed,
       enemies: game.enemies.items.length,
       obstacles: game.obstacles.items.length,
       pickups: game.pickups.items.length,
-      projectiles: game.projectiles.items.length
+      projectiles: game.projectiles.items.length,
+      fadingObjects: game.fadeOutObjects.items.length,
+      fadeOpacity: game.fadeOutObjects.items[0]?.materials[0]?.material.opacity ?? 1
     };
   }, expectedDimension);
   const riftPassed = stats.riftZ === null || stats.riftZ <= stats.playerZ - 1.65;
   const objectsCleared = stats.enemies === 0 && stats.obstacles === 0 && stats.pickups === 0 && stats.projectiles === 0;
+  const fadedBeforePass = stats.fadingObjects === 0;
+  const deceleratingAfterPass = stats.warpPhase === 'decelerate' && stats.worldTravelSpeed > 0.35;
   return {
     name,
     passed:
@@ -439,9 +446,39 @@ async function checkDimensionPortalTraversal(page, expectedDimension, name) {
       Math.abs(stats.playerZ - stats.anchorZ) < 0.05 &&
       riftPassed &&
       objectsCleared &&
-      !stats.transitionActive &&
-      !stats.warpActive,
-    detail: `dimension=${stats.dimension}, playerZ=${stats.playerZ.toFixed(2)}, riftZ=${stats.riftZ?.toFixed(2) ?? 'expired'}, objects=${stats.enemies}/${stats.obstacles}/${stats.pickups}/${stats.projectiles}, transition=${stats.transitionActive}, warp=${stats.warpActive}`
+      fadedBeforePass &&
+      deceleratingAfterPass &&
+      !stats.transitionActive,
+    detail: `dimension=${stats.dimension}, playerZ=${stats.playerZ.toFixed(2)}, riftZ=${stats.riftZ?.toFixed(2) ?? 'expired'}, objects=${stats.enemies}/${stats.obstacles}/${stats.pickups}/${stats.projectiles}, fading=${stats.fadingObjects}, fadeAlpha=${stats.fadeOpacity.toFixed(2)}, transition=${stats.transitionActive}, warp=${stats.warpPhase}/${stats.worldTravelSpeed.toFixed(2)}`
+  };
+}
+
+async function checkTransitionObjectsFadeBeforePass(page) {
+  const stats = await page.evaluate(() => {
+    const game = window['__RIFT_AVIATOR__'];
+    return {
+      transitionActive: Boolean(game.dimensionTransition),
+      enemies: game.enemies.items.length,
+      obstacles: game.obstacles.items.length,
+      pickups: game.pickups.items.length,
+      projectiles: game.projectiles.items.length,
+      fadingObjects: game.fadeOutObjects.items.length,
+      fadeOpacity: game.fadeOutObjects.items[0]?.materials[0]?.material.opacity ?? 1
+    };
+  });
+
+  return {
+    name: 'previous dimension objects fade before portal pass',
+    passed:
+      stats.transitionActive &&
+      stats.enemies === 0 &&
+      stats.obstacles === 0 &&
+      stats.pickups === 0 &&
+      stats.projectiles === 0 &&
+      stats.fadingObjects >= 4 &&
+      stats.fadeOpacity > 0 &&
+      stats.fadeOpacity < 1,
+    detail: `objects=${stats.enemies}/${stats.obstacles}/${stats.pickups}/${stats.projectiles}, fading=${stats.fadingObjects}, alpha=${stats.fadeOpacity.toFixed(2)}`
   };
 }
 
@@ -511,15 +548,15 @@ async function seedPreviousDimensionObjects(page) {
     game.enemies.spawnEnemy('combat');
     game.obstacles.spawnObstacle('phase');
     game.pickups.spawnPickup('stability');
-    game.projectiles.spawnEnemyProjectile(game.player.group.position.clone().setZ(8), game.state.dimensionConfig.color, 0);
+    game.projectiles.spawnEnemyProjectile(game.player.group.position.clone().setZ(18), game.state.dimensionConfig.color, 0);
     for (const enemy of game.enemies.items) {
-      enemy.mesh.position.z = 10;
+      enemy.mesh.position.z = 18;
     }
     for (const obstacle of game.obstacles.items) {
-      obstacle.mesh.position.z = 11;
+      obstacle.mesh.position.z = 19;
     }
     for (const pickup of game.pickups.items) {
-      pickup.mesh.position.z = 9;
+      pickup.mesh.position.z = 17;
     }
   });
 }

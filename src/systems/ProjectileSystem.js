@@ -56,6 +56,12 @@ export class ProjectileSystem {
     projectile.dispose();
   }
 
+  drain() {
+    const items = this.items.splice(0);
+    this.cooldown = 0;
+    return items.map((projectile) => projectile.mesh);
+  }
+
   reset() {
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       this.removeAt(i);

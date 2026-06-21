@@ -49,6 +49,12 @@ export class PickupSystem {
     disposeObject3D(pickup.mesh);
   }
 
+  drain() {
+    const items = this.items.splice(0);
+    this.spawnTimer = 1.2;
+    return items.map((pickup) => pickup.mesh);
+  }
+
   reset() {
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       this.removeAt(i);

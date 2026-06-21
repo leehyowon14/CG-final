@@ -53,6 +53,12 @@ export class ObstacleSystem {
     disposeObject3D(obstacle.mesh);
   }
 
+  drain() {
+    const items = this.items.splice(0);
+    this.spawnTimer = 1.8;
+    return items.map((obstacle) => obstacle.mesh);
+  }
+
   reset() {
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       this.removeAt(i);

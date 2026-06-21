@@ -4,8 +4,10 @@ import { createPlayerModel } from '../gfx/ModelFactory.js';
 import { updateEmissiveForDimension, updateShieldMaterial } from '../gfx/Materials.js';
 import { createPlayerHBV } from '../systems/HBV.js';
 
-const WARP_DURATION = 0.72;
-const WARP_DISTANCE = 9.7;
+const WARP_CRUISE_SPEED = 20;
+const WARP_ACCEL_RESPONSE = 4.4;
+const WARP_DECEL_RESPONSE = 2.1;
+const WARP_STOP_SPEED = 0.35;
 
 export class PlayerShip {
   constructor() {
@@ -71,25 +73,34 @@ export class PlayerShip {
 
   startDimensionWarp() {
     this.dimensionWarp = {
+      phase: 'accelerate',
       elapsed: 0,
-      previousDistance: 0
+      speed: 0
     };
+  }
+
+  finishDimensionWarp() {
+    if (!this.dimensionWarp) return;
+    this.dimensionWarp.phase = 'decelerate';
   }
 
   updateDimensionWarp(delta) {
     this.worldTravelSpeed = this.velocity.z;
     if (!this.dimensionWarp) return;
 
-    this.dimensionWarp.elapsed = Math.min(WARP_DURATION, this.dimensionWarp.elapsed + delta);
-    const t = this.dimensionWarp.elapsed / WARP_DURATION;
-    const eased = smootherStep(t);
-    const distance = WARP_DISTANCE * eased;
-    const deltaDistance = distance - this.dimensionWarp.previousDistance;
-    this.worldTravelSpeed = delta > 0 ? deltaDistance / delta : 0;
-    this.dimensionWarp.previousDistance = distance;
+    this.dimensionWarp.elapsed += delta;
+    const targetSpeed = this.dimensionWarp.phase === 'accelerate' ? WARP_CRUISE_SPEED : 0;
+    const response = this.dimensionWarp.phase === 'accelerate' ? WARP_ACCEL_RESPONSE : WARP_DECEL_RESPONSE;
+    this.dimensionWarp.speed = THREE.MathUtils.lerp(
+      this.dimensionWarp.speed,
+      targetSpeed,
+      1 - Math.exp(-delta * response)
+    );
+    this.worldTravelSpeed = this.dimensionWarp.speed;
 
-    if (this.dimensionWarp.elapsed >= WARP_DURATION) {
+    if (this.dimensionWarp.phase === 'decelerate' && this.dimensionWarp.speed <= WARP_STOP_SPEED) {
       this.dimensionWarp = null;
+      this.worldTravelSpeed = 0;
     }
   }
 
@@ -121,8 +132,4 @@ export class PlayerShip {
   flashHit() {
     this.hitFlash = 0.22;
   }
-}
-
-function smootherStep(t) {
-  return t * t * t * (t * (t * 6 - 15) + 10);
 }
