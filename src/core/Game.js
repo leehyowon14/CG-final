@@ -209,8 +209,15 @@ export class Game {
       const riftPosition = this.player.group.position.clone();
       riftPosition.y += 1.3;
       this.ddgi.flash(riftPosition, this.state.dimensionConfig.color);
+      this.primePostTransitionSpawns();
       this.dimensionTransition = null;
     }
+  }
+
+  primePostTransitionSpawns() {
+    this.enemies.primeNearSpawns();
+    this.obstacles.primeNearSpawns();
+    this.pickups.primeNearSpawns();
   }
 
   updateFogForCameraMode() {

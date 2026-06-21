@@ -8,7 +8,9 @@ export class ObstacleSystem {
   constructor(scene) {
     this.scene = scene;
     this.items = [];
-    this.spawnTimer = 1.8;
+    this.spawnTimer = 0.15;
+    this.nearSpawnActive = true;
+    this.nearSpawnTimer = 0.15;
   }
 
   update(delta, state, worldTravelSpeed = 0) {
@@ -18,6 +20,7 @@ export class ObstacleSystem {
         this.spawnTimer = 0.75;
         this.spawnObstacle(state.dimension);
       }
+      this.updateNearSpawns(delta, state.dimension);
     }
 
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
@@ -34,10 +37,40 @@ export class ObstacleSystem {
   spawnObstacle(dimensionId) {
     if (dimensionId !== 'phase') return;
 
+    this.spawnObstacleAt(GAME_CONFIG.obstacle.zSpawn, 'far');
+  }
+
+  spawnObstacleAt(z, spawnSource = 'far') {
     const kind = weightedKind();
-    const obstacle = new Obstacle(kind, new THREE.Vector3(randomLane(), 0.2, GAME_CONFIG.obstacle.zSpawn));
+    const obstacle = new Obstacle(kind, new THREE.Vector3(randomLane(), 0.2, z));
+    obstacle.spawnSource = spawnSource;
     this.items.push(obstacle);
     this.scene.add(obstacle.mesh);
+  }
+
+  primeNearSpawns() {
+    this.nearSpawnActive = true;
+    this.nearSpawnTimer = Math.min(this.nearSpawnTimer, 0.15);
+    this.spawnTimer = Math.min(this.spawnTimer, 0.15);
+  }
+
+  updateNearSpawns(delta, dimensionId) {
+    if (!this.nearSpawnActive || dimensionId !== 'phase') return;
+
+    if (this.hasFarSpawnReachedNearLine()) {
+      this.nearSpawnActive = false;
+      return;
+    }
+
+    this.nearSpawnTimer -= delta;
+    if (this.nearSpawnTimer <= 0 && this.items.length < GAME_CONFIG.obstacle.maxCount) {
+      this.spawnObstacleAt(GAME_CONFIG.spawn.portalExitZ, 'near');
+      this.nearSpawnTimer = GAME_CONFIG.spawn.portalExitInterval;
+    }
+  }
+
+  hasFarSpawnReachedNearLine() {
+    return this.items.some((obstacle) => obstacle.spawnSource === 'far' && obstacle.mesh.position.z <= GAME_CONFIG.spawn.portalExitZ);
   }
 
   remove(obstacle) {
@@ -56,6 +89,8 @@ export class ObstacleSystem {
   drain() {
     const items = this.items.splice(0);
     this.spawnTimer = 1.8;
+    this.nearSpawnActive = false;
+    this.nearSpawnTimer = 0.15;
     return items.map((obstacle) => obstacle.mesh);
   }
 
@@ -63,7 +98,9 @@ export class ObstacleSystem {
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       this.removeAt(i);
     }
-    this.spawnTimer = 1.8;
+    this.spawnTimer = 0.15;
+    this.nearSpawnActive = true;
+    this.nearSpawnTimer = 0.15;
   }
 }
 

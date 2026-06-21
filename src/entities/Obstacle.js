@@ -5,6 +5,7 @@ export class Obstacle {
     this.kind = kind;
     this.radius = kind === 'wall' ? 1.7 : 0.95;
     this.hp = kind === 'wall' ? 120 : kind === 'mine' ? 70 : 90;
+    this.spawnSource = 'far';
     this.mesh = createObstacleModel(kind);
     this.mesh.position.copy(position);
     this.mesh.rotation.set(Math.random(), Math.random() * Math.PI, Math.random());

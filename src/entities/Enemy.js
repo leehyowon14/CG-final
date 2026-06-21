@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GAME_CONFIG } from '../core/Constants.js';
 import { createEnemyModel, createMiniBossModel } from '../gfx/ModelFactory.js';
 
 const parentWorldQuaternion = new THREE.Quaternion();
@@ -12,6 +13,7 @@ export class Enemy {
     this.hp = this.maxHp;
     this.score = type === 'boss' ? 900 : type === 'gunner' ? 140 : type === 'striker' ? 120 : 90;
     this.fireTimer = type === 'boss' ? 0.4 : 1.1 + Math.random() * 1.3;
+    this.spawnSource = 'far';
     this.mesh = type === 'boss' ? createMiniBossModel() : createEnemyModel(type);
     this.mesh.position.copy(position);
     this.mesh.rotation.y = Math.PI;
@@ -47,7 +49,7 @@ export class Enemy {
     this.mesh.position.x += Math.sin(state.elapsed * 2 + this.mesh.id) * delta * 1.2;
     this.mesh.rotation.y += delta * (this.type === 'drone' ? 1.2 : 0.4);
 
-    if (this.type === 'gunner') {
+    if (this.type === 'gunner' && this.mesh.position.z <= GAME_CONFIG.enemy.fireStartZ) {
       this.fireTimer -= delta;
       if (this.fireTimer <= 0) {
         this.fireTimer = 1.5;

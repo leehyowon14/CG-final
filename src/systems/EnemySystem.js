@@ -8,10 +8,12 @@ export class EnemySystem {
   constructor(scene) {
     this.scene = scene;
     this.items = [];
-    this.spawnTimer = 1.2;
+    this.spawnTimer = 0.15;
     this.bossTimer = 24;
     this.player = null;
     this.projectileSystem = null;
+    this.nearSpawnActive = true;
+    this.nearSpawnTimer = 0.15;
   }
 
   update(delta, state, worldTravelSpeed = 0, camera = null) {
@@ -21,6 +23,7 @@ export class EnemySystem {
       this.spawnTimer = state.dimension === 'combat' ? 0.65 : 1.8;
       this.spawnEnemy(state.dimension);
     }
+    this.updateNearSpawns(delta, state.dimension);
 
     if (state.dimension === 'combat') {
       this.bossTimer -= delta;
@@ -59,11 +62,41 @@ export class EnemySystem {
   }
 
   spawnEnemy(dimensionId) {
+    this.spawnEnemyAt(dimensionId, GAME_CONFIG.enemy.zSpawn, 'far');
+  }
+
+  spawnEnemyAt(dimensionId, z, spawnSource = 'far') {
     const roll = Math.random();
     const type = dimensionId === 'combat' && roll > 0.64 ? 'gunner' : roll > 0.36 ? 'striker' : 'drone';
-    const enemy = new Enemy(type, new THREE.Vector3(randomLane(), 0, GAME_CONFIG.enemy.zSpawn));
+    const enemy = new Enemy(type, new THREE.Vector3(randomLane(), 0, z));
+    enemy.spawnSource = spawnSource;
     this.items.push(enemy);
     this.scene.add(enemy.mesh);
+  }
+
+  primeNearSpawns() {
+    this.nearSpawnActive = true;
+    this.nearSpawnTimer = Math.min(this.nearSpawnTimer, 0.15);
+    this.spawnTimer = Math.min(this.spawnTimer, 0.15);
+  }
+
+  updateNearSpawns(delta, dimensionId) {
+    if (!this.nearSpawnActive) return;
+
+    if (this.hasFarSpawnReachedNearLine()) {
+      this.nearSpawnActive = false;
+      return;
+    }
+
+    this.nearSpawnTimer -= delta;
+    if (this.nearSpawnTimer <= 0 && this.items.length < GAME_CONFIG.enemy.maxCount) {
+      this.spawnEnemyAt(dimensionId, GAME_CONFIG.spawn.portalExitZ, 'near');
+      this.nearSpawnTimer = GAME_CONFIG.spawn.portalExitInterval;
+    }
+  }
+
+  hasFarSpawnReachedNearLine() {
+    return this.items.some((enemy) => enemy.spawnSource === 'far' && enemy.mesh.position.z <= GAME_CONFIG.spawn.portalExitZ);
   }
 
   spawnBoss() {
@@ -87,8 +120,10 @@ export class EnemySystem {
 
   drain() {
     const items = this.items.splice(0);
-    this.spawnTimer = 1.2;
+    this.spawnTimer = 0.15;
     this.bossTimer = 10;
+    this.nearSpawnActive = false;
+    this.nearSpawnTimer = 0.15;
     return items.map((enemy) => enemy.mesh);
   }
 
@@ -96,7 +131,9 @@ export class EnemySystem {
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       this.removeAt(i);
     }
-    this.spawnTimer = 1.2;
+    this.spawnTimer = 0.15;
     this.bossTimer = 10;
+    this.nearSpawnActive = true;
+    this.nearSpawnTimer = 0.15;
   }
 }

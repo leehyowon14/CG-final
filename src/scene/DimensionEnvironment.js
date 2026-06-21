@@ -7,39 +7,12 @@ export class DimensionEnvironment {
     this.group = new THREE.Group();
     this.panelBaseColor = new THREE.Color('#91a7aa');
     this.panelWorldPosition = new THREE.Vector3();
-    this.tunnel = this.createTunnel();
-    this.grid = this.createGrid();
     this.receiverPanels = this.createReceiverPanels();
     this.starLayers = this.createStarLayers();
     this.dustField = this.createDustField();
     this.scroll = 0;
-    this.group.add(this.tunnel, this.grid, ...this.receiverPanels, ...this.starLayers, this.dustField);
+    this.group.add(...this.receiverPanels, ...this.starLayers, this.dustField);
     scene.add(this.group);
-  }
-
-  createTunnel() {
-    const geometry = new THREE.CylinderGeometry(18, 18, 42, 18, 1, true);
-    const material = new THREE.MeshBasicMaterial({
-      color: '#082b34',
-      transparent: true,
-      opacity: 0.18,
-      side: THREE.BackSide,
-      wireframe: true
-    });
-    const tunnel = new THREE.Mesh(geometry, material);
-    tunnel.rotation.x = Math.PI / 2;
-    tunnel.position.z = 4;
-    return tunnel;
-  }
-
-  createGrid() {
-    const grid = new THREE.GridHelper(32, 32, '#35d6c6', '#16444c');
-    grid.position.y = -1.25;
-    grid.position.z = 4;
-    grid.material.transparent = true;
-    grid.material.opacity = 0.38;
-    grid.material.depthWrite = false;
-    return grid;
   }
 
   createReceiverPanels() {
@@ -130,10 +103,6 @@ export class DimensionEnvironment {
     if (this.scene.fog) {
       this.scene.fog.color.copy(dimension.fogColor);
     }
-    this.tunnel.material.color.copy(dimension.color);
-    this.grid.material.color.copy(dimension.color);
-    this.grid.position.z = 4 - (this.scroll % 2);
-    this.tunnel.position.z = 4 - (this.scroll % 3) * 0.35;
     this.group.rotation.z += delta * 0.08;
     this.group.updateMatrixWorld(true);
     const panelColor = this.panelBaseColor.clone().lerp(dimension.color, 0.04);

@@ -8,7 +8,9 @@ export class PickupSystem {
   constructor(scene) {
     this.scene = scene;
     this.items = [];
-    this.spawnTimer = 2.4;
+    this.spawnTimer = 0.15;
+    this.nearSpawnActive = true;
+    this.nearSpawnTimer = 0.15;
   }
 
   update(delta, state, worldTravelSpeed = 0) {
@@ -17,6 +19,7 @@ export class PickupSystem {
       this.spawnTimer = state.dimension === 'phase' ? 1.35 : 3.1;
       this.spawnPickup(state.dimension);
     }
+    this.updateNearSpawns(delta, state.dimension);
 
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       const pickup = this.items[i];
@@ -30,10 +33,40 @@ export class PickupSystem {
   }
 
   spawnPickup(dimensionId) {
+    this.spawnPickupAt(dimensionId, GAME_CONFIG.pickup.zSpawn, 'far');
+  }
+
+  spawnPickupAt(dimensionId, z, spawnSource = 'far') {
     const kind = pickupKindForDimension(dimensionId);
-    const pickup = new Pickup(kind, new THREE.Vector3(randomLane(), 0.25, GAME_CONFIG.pickup.zSpawn));
+    const pickup = new Pickup(kind, new THREE.Vector3(randomLane(), 0.25, z));
+    pickup.spawnSource = spawnSource;
     this.items.push(pickup);
     this.scene.add(pickup.mesh);
+  }
+
+  primeNearSpawns() {
+    this.nearSpawnActive = true;
+    this.nearSpawnTimer = Math.min(this.nearSpawnTimer, 0.15);
+    this.spawnTimer = Math.min(this.spawnTimer, 0.15);
+  }
+
+  updateNearSpawns(delta, dimensionId) {
+    if (!this.nearSpawnActive) return;
+
+    if (this.hasFarSpawnReachedNearLine()) {
+      this.nearSpawnActive = false;
+      return;
+    }
+
+    this.nearSpawnTimer -= delta;
+    if (this.nearSpawnTimer <= 0 && this.items.length < GAME_CONFIG.pickup.maxCount) {
+      this.spawnPickupAt(dimensionId, GAME_CONFIG.spawn.portalExitZ, 'near');
+      this.nearSpawnTimer = GAME_CONFIG.spawn.portalExitInterval;
+    }
+  }
+
+  hasFarSpawnReachedNearLine() {
+    return this.items.some((pickup) => pickup.spawnSource === 'far' && pickup.mesh.position.z <= GAME_CONFIG.spawn.portalExitZ);
   }
 
   remove(pickup) {
@@ -52,6 +85,8 @@ export class PickupSystem {
   drain() {
     const items = this.items.splice(0);
     this.spawnTimer = 1.2;
+    this.nearSpawnActive = false;
+    this.nearSpawnTimer = 0.15;
     return items.map((pickup) => pickup.mesh);
   }
 
@@ -59,7 +94,9 @@ export class PickupSystem {
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       this.removeAt(i);
     }
-    this.spawnTimer = 1.2;
+    this.spawnTimer = 0.15;
+    this.nearSpawnActive = true;
+    this.nearSpawnTimer = 0.15;
   }
 }
 

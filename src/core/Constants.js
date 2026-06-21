@@ -77,18 +77,23 @@ export const GAME_CONFIG = {
     ttl: 2.2,
     damage: 24
   },
+  spawn: {
+    portalExitZ: 32,
+    portalExitInterval: 0.75
+  },
   enemy: {
-    zSpawn: 18,
+    zSpawn: 168,
+    fireStartZ: 18,
     zDespawn: -14,
     maxCount: 18
   },
   obstacle: {
-    zSpawn: 18,
+    zSpawn: 168,
     zDespawn: -14,
     maxCount: 16
   },
   pickup: {
-    zSpawn: 16,
+    zSpawn: 156,
     zDespawn: -14,
     maxCount: 8
   },

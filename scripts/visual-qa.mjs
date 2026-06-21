@@ -894,8 +894,8 @@ async function checkCameraCycle(page) {
       afterThird === 'top' &&
       topFogRetained &&
       currentFogRestored &&
-      currentFogRange.near >= 20 &&
-      currentFogRange.far >= 56,
+      currentFogRange.near === 20 &&
+      currentFogRange.far === 56,
     detail: `${before} -> ${afterFirst} -> ${afterSecond} -> ${afterThird}, topFogRetained=${topFogRetained}, currentFogRestored=${currentFogRestored}, fog=${currentFogRange.near}/${currentFogRange.far}`
   };
 }
