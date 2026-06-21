@@ -105,7 +105,7 @@ export class Game {
       this.player.update(delta, this.input, this.state);
       worldTravelSpeed = this.player.worldTravelSpeed;
       this.projectiles.update(delta, this.input, this.player, this.state);
-      this.enemies.update(delta, this.state, worldTravelSpeed);
+      this.enemies.update(delta, this.state, worldTravelSpeed, this.setup.camera);
       this.obstacles.update(delta, this.state, worldTravelSpeed);
       this.pickups.update(delta, this.state, worldTravelSpeed);
       this.dimensionRifts.update(delta, this.setup.camera, worldTravelSpeed, this.player.group.position);

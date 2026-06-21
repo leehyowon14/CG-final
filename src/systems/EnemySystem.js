@@ -14,7 +14,7 @@ export class EnemySystem {
     this.projectileSystem = null;
   }
 
-  update(delta, state, worldTravelSpeed = 0) {
+  update(delta, state, worldTravelSpeed = 0, camera = null) {
     this.spawnTimer -= delta * DIMENSIONS[state.dimension].spawnRate;
 
     if (this.spawnTimer <= 0 && this.items.length < GAME_CONFIG.enemy.maxCount) {
@@ -38,11 +38,18 @@ export class EnemySystem {
 
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       const enemy = this.items[i];
-      enemy.update(delta, state, playerPosition, (position, lateralVelocity) => {
-        if (this.projectileSystem) {
-          this.projectileSystem.spawnEnemyProjectile(position, state.dimensionConfig.color, lateralVelocity);
-        }
-      }, worldTravelSpeed);
+      enemy.update(
+        delta,
+        state,
+        playerPosition,
+        (position, lateralVelocity) => {
+          if (this.projectileSystem) {
+            this.projectileSystem.spawnEnemyProjectile(position, state.dimensionConfig.color, lateralVelocity);
+          }
+        },
+        worldTravelSpeed,
+        camera
+      );
       const outOfTravelRange =
         enemy.mesh.position.z < GAME_CONFIG.enemy.zDespawn || enemy.mesh.position.z > GAME_CONFIG.enemy.zSpawn + 24;
       if (outOfTravelRange && enemy.type !== 'boss') {

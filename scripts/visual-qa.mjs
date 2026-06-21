@@ -112,6 +112,7 @@ try {
   checks.push(await checkRiftVerticalTravelPlaneAcrossCameraModes(page));
   checks.push(await checkRiftAlphaFadesBeforePass(page, 'combat'));
   checks.push(await checkDimensionPortalTraversal(page, 'combat', 'Digit2 switches to combat after portal traversal'));
+  checks.push(await checkEnemyHealthBars(page));
   await page.screenshot({ path: `${screenshotDir}/02_combat_dimension.png` });
 
   await page.waitForTimeout(500);
@@ -441,6 +442,62 @@ async function checkDimensionPortalTraversal(page, expectedDimension, name) {
       !stats.transitionActive &&
       !stats.warpActive,
     detail: `dimension=${stats.dimension}, playerZ=${stats.playerZ.toFixed(2)}, riftZ=${stats.riftZ?.toFixed(2) ?? 'expired'}, objects=${stats.enemies}/${stats.obstacles}/${stats.pickups}/${stats.projectiles}, transition=${stats.transitionActive}, warp=${stats.warpActive}`
+  };
+}
+
+async function checkEnemyHealthBars(page) {
+  const stats = await page.evaluate(() => {
+    const game = window['__RIFT_AVIATOR__'];
+    game.enemies.reset();
+    game.obstacles.reset();
+    game.enemies.spawnEnemy('combat');
+    game.enemies.spawnEnemy('combat');
+    game.enemies.spawnBoss();
+    game.obstacles.spawnObstacle('phase');
+
+    const positions = [
+      { x: -2.6, y: 0, z: 6.8 },
+      { x: 2.2, y: 0, z: 8.5 },
+      { x: 0, y: 1.1, z: 12.5 }
+    ];
+
+    game.enemies.items.forEach((enemy, index) => {
+      enemy.mesh.position.set(positions[index].x, positions[index].y, positions[index].z);
+      if (index === 0) {
+        enemy.damage(enemy.maxHp * 0.45);
+      }
+      enemy.updateHealthBar(game.setup.camera);
+    });
+
+    if (game.obstacles.items[0]) {
+      game.obstacles.items[0].mesh.position.set(4.2, 0.2, 7.7);
+    }
+
+    game.render();
+
+    const enemyBarCount = game.enemies.items.filter((enemy) => enemy.mesh.getObjectByName('EnemyHealthBar')).length;
+    const fillScales = game.enemies.items.map((enemy) => enemy.mesh.getObjectByName('EnemyHealthBarFill')?.scale.x ?? 0);
+    const obstacleBarCount = game.obstacles.items.filter((obstacle) => obstacle.mesh.getObjectByName?.('EnemyHealthBar')).length;
+
+    return {
+      enemyCount: game.enemies.items.length,
+      enemyBarCount,
+      obstacleCount: game.obstacles.items.length,
+      obstacleBarCount,
+      fillScales
+    };
+  });
+
+  return {
+    name: 'enemy health bars distinguish enemies from obstacles',
+    passed:
+      stats.enemyCount === 3 &&
+      stats.enemyBarCount === stats.enemyCount &&
+      stats.obstacleCount === 1 &&
+      stats.obstacleBarCount === 0 &&
+      stats.fillScales.some((scale) => scale < 0.7) &&
+      stats.fillScales.every((scale) => scale > 0),
+    detail: `${stats.enemyBarCount}/${stats.enemyCount} enemies have bars, obstacles with bars=${stats.obstacleBarCount}, fill=${stats.fillScales.map((scale) => scale.toFixed(2)).join('/')}`
   };
 }
 
