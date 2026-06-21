@@ -12,10 +12,15 @@ describe('DimensionRiftSystem', () => {
     expect(rifts.items).toHaveLength(1);
     expect(scene.children.some((child) => child.name === 'DimensionRift')).toBe(true);
     expect(rifts.items[0].opening.children.some((child) => child.name === 'DimensionRiftPortalCore')).toBe(true);
+    expect(
+      rifts.items[0].opening.children.find((child) => child.name === 'DimensionRiftPortalCore').userData.ddgiContributor
+        .intensity
+    ).toBe(2.2);
     expect(rifts.items[0].opening.children.filter((child) => child.name === 'DimensionRiftCrackSegment').length).toBeGreaterThan(10);
     expect(rifts.items[0].opening.children.filter((child) => child.name === 'DimensionRiftEdgeShard').length).toBeGreaterThan(10);
     expect(rifts.items[0].shards.length).toBeGreaterThan(20);
     expect(rifts.items[0].shards.filter((shard) => shard.mesh.name === 'DimensionRiftGIReceiverShard').length).toBeGreaterThan(6);
+    expect(rifts.items[0].shards.filter((shard) => shard.mesh.userData.ddgiContributor).length).toBe(rifts.items[0].shards.length);
     expect(rifts.items[0].shards.every((shard) => shard.mesh.material.isMeshStandardMaterial)).toBe(true);
     expect(rifts.items[0].shards.every((shard) => shard.mesh.material.emissiveIntensity === 0)).toBe(true);
   });

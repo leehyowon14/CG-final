@@ -25,9 +25,11 @@ describe('GameState', () => {
   it('resets HBV debug visibility with other transient debug state', () => {
     const state = new GameState();
     state.hbvDebug = true;
+    state.frozen = true;
 
     state.restart();
 
     expect(state.hbvDebug).toBe(false);
+    expect(state.frozen).toBe(false);
   });
 });

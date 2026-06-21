@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createPickupModel } from './ModelFactory.js';
+import { createDarkHullMaterial, createHullMaterial } from './Materials.js';
 
 function collectMeshes(group) {
   const meshes = [];
@@ -22,5 +23,20 @@ describe('createPickupModel', () => {
     expect(standardMaterials.every((material) => material.emissive.getHexString() === '35f27a')).toBe(true);
     expect(standardMaterials.every((material) => material.emissiveIntensity >= 2)).toBe(true);
     expect(pickup.getObjectByName('PickupGreenLight')).toBeUndefined();
+  });
+});
+
+describe('player hull materials', () => {
+  it('uses neutral hull colors so colored DDGI can tint the ship', () => {
+    const hull = createHullMaterial();
+    const darkHull = createDarkHullMaterial();
+
+    expect(hull.color.getHexString()).toBe('d9dde3');
+    expect(darkHull.color.getHexString()).toBe('5f6874');
+    expect(hull.emissiveIntensity).toBeLessThan(0.12);
+    expect(darkHull.emissiveIntensity).toBeLessThan(0.13);
+
+    hull.dispose();
+    darkHull.dispose();
   });
 });

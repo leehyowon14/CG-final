@@ -15,6 +15,7 @@ export class GameState {
     this.giEnabled = true;
     this.ddgiDebug = false;
     this.hbvDebug = false;
+    this.frozen = false;
     this.receiverPanelsVisible = false;
     this.dimensionStacks = GAME_CONFIG.dimension.maxStacks;
     this.dimensionRecharge = 0;
@@ -41,6 +42,7 @@ export class GameState {
     this.giEnabled = true;
     this.ddgiDebug = false;
     this.hbvDebug = false;
+    this.frozen = false;
     this.receiverPanelsVisible = false;
     this.dimensionStacks = GAME_CONFIG.dimension.maxStacks;
     this.dimensionRecharge = 0;

@@ -15,33 +15,33 @@ const PLAYER_MODEL_OBJ = 'kenney_craft_racer.obj';
 const PLAYER_MODEL_MTL = 'kenney_craft_racer.mtl';
 const KENNEY_MATERIAL_PALETTE = {
   metal: {
-    color: '#3e98ad',
-    emissive: '#031016',
-    emissiveIntensity: 0.08,
+    color: '#d9dde3',
+    emissive: '#080c10',
+    emissiveIntensity: 0.05,
     roughness: 0.4,
     metalness: 0.42,
     envMapIntensity: 1.05
   },
   metalDark: {
-    color: '#14586a',
-    emissive: '#01080b',
-    emissiveIntensity: 0.06,
+    color: '#6a7480',
+    emissive: '#05090d',
+    emissiveIntensity: 0.05,
     roughness: 0.42,
     metalness: 0.46,
     envMapIntensity: 1
   },
   dark: {
-    color: '#071923',
-    emissive: '#01080b',
-    emissiveIntensity: 0.05,
+    color: '#303943',
+    emissive: '#04070a',
+    emissiveIntensity: 0.04,
     roughness: 0.5,
     metalness: 0.38,
     envMapIntensity: 0.9
   },
   metalRed: {
-    color: '#ff6b2a',
-    emissive: '#3a0b02',
-    emissiveIntensity: 0.28,
+    color: '#d7dbe1',
+    emissive: '#080c10',
+    emissiveIntensity: 0.05,
     roughness: 0.36,
     metalness: 0.3,
     envMapIntensity: 1.05
@@ -50,6 +50,8 @@ const KENNEY_MATERIAL_PALETTE = {
 
 export function createPlayerModel() {
   const group = new THREE.Group();
+  group.name = 'PlayerShip';
+  group.userData.ddgiIgnore = true;
   const fallback = new THREE.Group();
   const effects = new THREE.Group();
   group.add(fallback, effects);

@@ -75,6 +75,10 @@ export class DimensionEnvironment {
       panel.receiveShadow = true;
       panel.userData.offset = new THREE.Vector3(x, y, z);
       panel.userData.baseRotationY = panel.rotation.y;
+      panel.userData.ddgiContributor = {
+        intensity: 0.75,
+        radius: 5.2
+      };
       panels.push(panel);
     });
 

@@ -97,8 +97,17 @@ export class Game {
       this.state.receiverPanelsVisible = !this.state.receiverPanelsVisible;
     }
 
+    if (this.input.consume('KeyF')) {
+      this.state.frozen = !this.state.frozen;
+    }
+
     if (this.input.consume('KeyV')) {
       this.cameraRig.cycleView();
+    }
+
+    if (this.state.frozen) {
+      this.updateFrozenFrame();
+      return;
     }
 
     this.dimensionManager.update(delta);
@@ -166,6 +175,28 @@ export class Game {
     this.particles.update(delta);
     this.fadeOutObjects.update(delta);
     this.cameraRig.update(delta, this.player.group.position);
+    this.hud.update();
+  }
+
+  updateFrozenFrame() {
+    this.player.worldTravelSpeed = 0;
+    this.updateFogForCameraMode();
+    this.environment.update(0, this.state.dimension, 0, this.player.group.position, this.state.receiverPanelsVisible);
+    this.environmentMap.update(this.state.dimension);
+    this.lights.update(this.state.dimension);
+    this.ddgi.debugGroup.visible = this.state.ddgiDebug;
+    this.ddgi.uniforms.ddgiEnabled.value = this.state.giEnabled ? 1 : 0;
+    this.hbvDebug.update(this.player.group.position, this.player.group.quaternion, this.state.hbvDebug);
+    this.objectBoundsDebug.update(
+      {
+        enemies: this.enemies,
+        obstacles: this.obstacles,
+        pickups: this.pickups,
+        projectiles: this.projectiles
+      },
+      this.state.hbvDebug
+    );
+    this.cameraRig.update(0, this.player.group.position);
     this.hud.update();
   }
 

@@ -112,6 +112,11 @@ export class DimensionRiftSystem {
     portal.name = 'DimensionRiftPortalCore';
     portal.position.z = -0.04;
     portal.scale.set(1.26, 1.08, 1);
+    portal.userData.ddgiContributor = {
+      color: color.clone(),
+      intensity: 2.2,
+      radius: 9.0
+    };
     return portal;
   }
 
@@ -138,6 +143,11 @@ export class DimensionRiftSystem {
       shard.name = 'DimensionRiftEdgeShard';
       shard.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius * 0.7, 0.04 + Math.random() * 0.04);
       shard.rotation.set(Math.random() * 0.35, Math.random() * 0.35, angle + Math.PI * 0.5 + Math.random() * 0.5);
+      shard.userData.ddgiContributor = {
+        color: color.clone(),
+        intensity: 0.45,
+        radius: 4.2
+      };
       edgeShards.push(shard);
     }
     return edgeShards;
@@ -172,6 +182,11 @@ export class DimensionRiftSystem {
     mesh.scale.setScalar(0.56 + Math.random() * 0.5);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    mesh.userData.ddgiContributor = {
+      color: color.clone(),
+      intensity: 0.45,
+      radius: 4.2
+    };
 
     return {
       mesh,
@@ -210,6 +225,11 @@ export class DimensionRiftSystem {
     mesh.scale.setScalar(0.74 + Math.random() * 0.58);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    mesh.userData.ddgiContributor = {
+      color: color.clone(),
+      intensity: 1.15,
+      radius: 5.8
+    };
 
     return {
       mesh,

@@ -30,6 +30,7 @@ export class HUD {
           <span data-hbv-toggle>B HBV</span>
           <span data-gi-toggle>H GI</span>
           <span data-panels-toggle>P Panels</span>
+          <span data-freeze-toggle>F Freeze</span>
           <span>R Restart</span>
         </div>
       </section>
@@ -56,6 +57,7 @@ export class HUD {
       hbvToggle: this.find('[data-hbv-toggle]'),
       giToggle: this.find('[data-gi-toggle]'),
       panelsToggle: this.find('[data-panels-toggle]'),
+      freezeToggle: this.find('[data-freeze-toggle]'),
       gameOver: this.find('[data-game-over]')
     };
   }
@@ -93,6 +95,8 @@ export class HUD {
     this.refs.giToggle.setAttribute('aria-pressed', `${this.state.giEnabled}`);
     this.refs.panelsToggle.classList.toggle('is-active', this.state.receiverPanelsVisible);
     this.refs.panelsToggle.setAttribute('aria-pressed', `${this.state.receiverPanelsVisible}`);
+    this.refs.freezeToggle.classList.toggle('is-active', this.state.frozen);
+    this.refs.freezeToggle.setAttribute('aria-pressed', `${this.state.frozen}`);
     this.refs.gameOver.classList.toggle('is-visible', this.state.gameOver);
   }
 

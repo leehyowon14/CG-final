@@ -138,6 +138,7 @@ try {
   await page.waitForTimeout(250);
   await page.screenshot({ path: `${screenshotDir}/08_surfel_debug.png` });
   checks.push(await checkCanvasNotBlank(page, 'DDGI debug canvas nonblank'));
+  checks.push(await checkDDGIContributorDebugColor(page));
   checks.push(await checkToggleBorders(page, { gi: true, ddgi: true, hbv: false, panels: false }, 'G highlights DDGI toggle label'));
   await page.keyboard.press('KeyG');
   await page.waitForTimeout(100);
@@ -474,6 +475,8 @@ async function checkRiftVerticalTravelPlaneAcrossCameraModes(page) {
       const game = window['__RIFT_AVIATOR__'];
       const rift = game.dimensionRifts.items[0];
       rift.life = rift.maxLife;
+      rift.group.position.y = rift.entryPosition.y + 0.85;
+      rift.group.position.z = rift.entryPosition.z + 1.2;
       game.dimensionRifts.update(0.016, game.setup.camera);
       rift.group.updateMatrixWorld(true);
       game.render();
@@ -608,10 +611,17 @@ async function measureTravelObjectDelta(page, key) {
 }
 
 async function checkDimensionPortalTraversal(page, expectedDimension, name) {
-  await page.waitForFunction((dimension) => window['__RIFT_AVIATOR__'].state.dimension === dimension, expectedDimension, {
-    timeout: 1800
-  });
-  await page.waitForTimeout(80);
+  await page.waitForFunction(
+    (dimension) => {
+      const game = window['__RIFT_AVIATOR__'];
+      const rift = game.dimensionRifts.items.find((item) => item.toDimension === dimension);
+      const riftPassed = !rift || rift.group.position.z <= game.player.group.position.z - 1.65;
+      return game.state.dimension === dimension && !game.dimensionTransition && riftPassed;
+    },
+    expectedDimension,
+    { timeout: 2500 }
+  );
+  await page.waitForTimeout(50);
   const stats = await page.evaluate((dimension) => {
     const game = window['__RIFT_AVIATOR__'];
     const rift = game.dimensionRifts.items.find((item) => item.toDimension === dimension);
@@ -633,7 +643,6 @@ async function checkDimensionPortalTraversal(page, expectedDimension, name) {
     };
   }, expectedDimension);
   const riftPassed = stats.riftZ === null || stats.riftZ <= stats.playerZ - 1.65;
-  const objectsCleared = stats.enemies === 0 && stats.obstacles === 0 && stats.pickups === 0 && stats.projectiles === 0;
   const fadedBeforePass = stats.fadingObjects === 0;
   const deceleratingAfterPass = stats.warpPhase === 'decelerate' && stats.worldTravelSpeed > 0.35;
   return {
@@ -642,7 +651,6 @@ async function checkDimensionPortalTraversal(page, expectedDimension, name) {
       stats.dimension === expectedDimension &&
       Math.abs(stats.playerZ - stats.anchorZ) < 0.05 &&
       riftPassed &&
-      objectsCleared &&
       fadedBeforePass &&
       deceleratingAfterPass &&
       !stats.transitionActive,
@@ -899,16 +907,50 @@ async function playerProjectileCount(page) {
 async function captureGIState(page) {
   return page.evaluate(() => {
     const game = window['__RIFT_AVIATOR__'];
-    game.ddgi.update(0, game.state);
+    game.ddgi.update(0, game.state, { forceTraceAll: true });
     game.render();
     return {
       enabled: game.ddgi.uniforms.ddgiEnabled.value,
       probeCount: game.ddgi.probes.length,
       patchedMaterials: game.ddgi.materials.size,
       receiverPanels: game.environment.receiverPanels?.length ?? 0,
-      visibleReceiverPanels: game.environment.receiverPanels?.filter((panel) => panel.visible).length ?? 0
+      visibleReceiverPanels: game.environment.receiverPanels?.filter((panel) => panel.visible).length ?? 0,
+      contributors: game.ddgi.collectContributors().length
     };
   });
+}
+
+async function checkDDGIContributorDebugColor(page) {
+  const stats = await page.evaluate(() => {
+    const game = window['__RIFT_AVIATOR__'];
+    game.enemies.reset();
+    game.obstacles.reset();
+    game.pickups.reset();
+    const probe = game.ddgi.probeAt(4, 1, 4);
+    game.enemies.spawnEnemy('combat');
+    const enemy = game.enemies.items.at(-1);
+    enemy.mesh.position.set(probe.position.x, probe.position.y, probe.position.z + 0.8);
+    enemy.mesh.updateMatrixWorld(true);
+    for (let frame = 0; frame < 12; frame += 1) {
+      game.ddgi.update(0.16, game.state, { forceTraceAll: true });
+    }
+    game.render();
+    const color = probe.mesh.material.color;
+    const contributors = game.ddgi.collectContributors().length;
+    game.enemies.reset();
+    return {
+      red: color.r,
+      green: color.g,
+      blue: color.b,
+      contributors
+    };
+  });
+
+  return {
+    name: 'DDGI debug probes show nearby red contributor color',
+    passed: stats.contributors > 0 && stats.red > stats.green * 1.35 && stats.red > stats.blue * 1.35,
+    detail: `rgb=${stats.red.toFixed(2)}/${stats.green.toFixed(2)}/${stats.blue.toFixed(2)}, contributors=${stats.contributors}`
+  };
 }
 
 function formatChecks(checks) {

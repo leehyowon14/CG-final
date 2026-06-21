@@ -15,9 +15,9 @@ export function createEnergyMaterial(color, options = {}) {
 
 export function createHullMaterial() {
   return new THREE.MeshStandardMaterial({
-    color: '#9ba8b5',
+    color: '#d9dde3',
     emissive: '#08151c',
-    emissiveIntensity: 0.16,
+    emissiveIntensity: 0.1,
     roughness: 0.22,
     metalness: 0.88
   });
@@ -25,9 +25,9 @@ export function createHullMaterial() {
 
 export function createDarkHullMaterial() {
   return new THREE.MeshStandardMaterial({
-    color: '#374452',
+    color: '#5f6874',
     emissive: '#071016',
-    emissiveIntensity: 0.2,
+    emissiveIntensity: 0.12,
     roughness: 0.3,
     metalness: 0.78
   });
