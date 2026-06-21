@@ -51,6 +51,9 @@ try {
   await page.waitForFunction(() => Boolean(window['__RIFT_AVIATOR__']));
   await page.screenshot({ path: `${screenshotDir}/00_overview.png` });
   checks.push(await checkCanvasNotBlank(page, 'stability canvas nonblank'));
+  checks.push(await checkGIReceiverPanels(page));
+  checks.push(await checkReceiverPanelToggleAndAnchor(page));
+  checks.push(await checkToggleBorders(page, { gi: true, ddgi: false, panels: false }, 'GI toggle starts highlighted and DDGI starts idle'));
   checks.push(await expectText(page, '[data-dimension]', '안정 차원', 'starts in stability dimension'));
   checks.push(await checkWorldScrollTravel(page));
   checks.push(await checkMovementKey(page, 'KeyA', 'x', 'increase', 'A maps to screen left'));
@@ -129,21 +132,29 @@ try {
   await page.waitForTimeout(250);
   await page.screenshot({ path: `${screenshotDir}/08_surfel_debug.png` });
   checks.push(await checkCanvasNotBlank(page, 'DDGI debug canvas nonblank'));
+  checks.push(await checkToggleBorders(page, { gi: true, ddgi: true, panels: false }, 'G highlights DDGI toggle label'));
   await page.keyboard.press('KeyG');
   await page.waitForTimeout(100);
 
   await page.keyboard.press('KeyH');
   await page.waitForTimeout(250);
-  const giOffSignature = await captureCanvasSignature(page);
+  const giOffState = await captureGIState(page);
+  checks.push(await checkToggleBorders(page, { gi: false, ddgi: false, panels: false }, 'H clears GI toggle highlight'));
   await page.screenshot({ path: `${screenshotDir}/09_gi_off.png` });
   await page.keyboard.press('KeyH');
   await page.waitForTimeout(250);
-  const giOnSignature = await captureCanvasSignature(page);
+  const giOnState = await captureGIState(page);
+  checks.push(await checkToggleBorders(page, { gi: true, ddgi: false, panels: false }, 'H restores GI toggle highlight'));
   await page.screenshot({ path: `${screenshotDir}/10_gi_on.png` });
   checks.push({
-    name: 'GI toggle changes rendered pixels',
-    passed: giOffSignature.hash !== giOnSignature.hash,
-    detail: `off ${formatSignature(giOffSignature)} / on ${formatSignature(giOnSignature)}`
+    name: 'GI toggle updates DDGI shader state',
+    passed:
+      giOffState.enabled === 0 &&
+      giOnState.enabled === 1 &&
+      giOnState.probeCount >= 300 &&
+      giOnState.receiverPanels >= 8 &&
+      giOnState.patchedMaterials > 0,
+    detail: `enabled ${giOffState.enabled}->${giOnState.enabled}, probes=${giOnState.probeCount}, receiverPanels=${giOnState.receiverPanels}, visiblePanels=${giOnState.visibleReceiverPanels}, patched=${giOnState.patchedMaterials}`
   });
 
   await page.keyboard.press('KeyR');
@@ -237,11 +248,13 @@ async function checkDimensionRift(page) {
     const hasPortalCore = Boolean(activeRift?.opening.children.find((child) => child.name === 'DimensionRiftPortalCore'));
     const crackCount = activeRift?.opening.children.filter((child) => child.name === 'DimensionRiftCrackSegment').length ?? 0;
     const edgeShardCount = activeRift?.opening.children.filter((child) => child.name === 'DimensionRiftEdgeShard').length ?? 0;
+    const receiverShardCount = activeRift?.shards.filter((shard) => shard.mesh.name === 'DimensionRiftGIReceiverShard').length ?? 0;
     return {
       active: Boolean(activeRift),
       hasPortalCore,
       crackCount,
       edgeShardCount,
+      receiverShardCount,
       shardCount: activeRift?.shards.length ?? 0,
       standardShardCount: activeRift?.shards.filter((shard) => shard.mesh.material.isMeshStandardMaterial).length ?? 0
     };
@@ -253,9 +266,106 @@ async function checkDimensionRift(page) {
       stats.hasPortalCore &&
       stats.crackCount >= 12 &&
       stats.edgeShardCount >= 12 &&
+      stats.receiverShardCount >= 8 &&
       stats.shardCount >= 20 &&
       stats.standardShardCount === stats.shardCount,
-    detail: `${stats.shardCount} glass shards, ${stats.standardShardCount} standard materials, cracks=${stats.crackCount}, edge=${stats.edgeShardCount}, portal=${stats.hasPortalCore}`
+    detail: `${stats.shardCount} glass shards, ${stats.standardShardCount} standard materials, receivers=${stats.receiverShardCount}, cracks=${stats.crackCount}, edge=${stats.edgeShardCount}, portal=${stats.hasPortalCore}`
+  };
+}
+
+async function checkGIReceiverPanels(page) {
+  const stats = await page.evaluate(() => {
+    const game = window['__RIFT_AVIATOR__'];
+    const panels = game.environment.receiverPanels ?? [];
+    return {
+      count: panels.length,
+      standardCount: panels.filter((panel) => panel.material?.isMeshStandardMaterial).length,
+      emissiveOffCount: panels.filter((panel) => panel.material?.emissiveIntensity === 0).length,
+      visibleCount: panels.filter((panel) => panel.visible).length
+    };
+  });
+
+  return {
+    name: 'DDGI receiver panels are available but hidden by default',
+    passed: stats.count >= 8 && stats.standardCount === stats.count && stats.emissiveOffCount === stats.count && stats.visibleCount === 0,
+    detail: `${stats.count} panels, ${stats.standardCount} standard materials, ${stats.emissiveOffCount} emissive-off, visible=${stats.visibleCount}`
+  };
+}
+
+async function checkReceiverPanelToggleAndAnchor(page) {
+  await page.keyboard.press('KeyP');
+  await page.waitForTimeout(120);
+  const before = await panelRelativeSample(page);
+  await page.keyboard.down('KeyW');
+  await page.waitForTimeout(220);
+  await page.keyboard.up('KeyW');
+  await page.waitForTimeout(80);
+  const after = await panelRelativeSample(page);
+  await page.keyboard.press('KeyP');
+  await page.waitForTimeout(80);
+  const hidden = await page.evaluate(() => {
+    const game = window['__RIFT_AVIATOR__'];
+    return {
+      panelsVisible: game.state.receiverPanelsVisible,
+      visibleCount: game.environment.receiverPanels.filter((panel) => panel.visible).length
+    };
+  });
+
+  const maxDelta = Math.max(
+    Math.abs(before.relative.x - after.relative.x),
+    Math.abs(before.relative.y - after.relative.y),
+    Math.abs(before.relative.z - after.relative.z)
+  );
+
+  return {
+    name: 'P toggles DDGI receiver panels anchored near player',
+    passed:
+      before.panelsVisible &&
+      before.visibleCount >= 8 &&
+      after.panelsVisible &&
+      after.visibleCount >= 8 &&
+      maxDelta < 0.08 &&
+      !hidden.panelsVisible &&
+      hidden.visibleCount === 0,
+    detail: `visible ${before.visibleCount}->${after.visibleCount}->${hidden.visibleCount}, relativeDelta=${maxDelta.toFixed(3)}`
+  };
+}
+
+async function panelRelativeSample(page) {
+  return page.evaluate(() => {
+    const game = window['__RIFT_AVIATOR__'];
+    game.environment.update(0.016, game.state.dimension, game.player.worldTravelSpeed, game.player.group.position, game.state.receiverPanelsVisible);
+    const panel = game.environment.receiverPanels[0];
+    const panelWorldPosition = panel.getWorldPosition(panel.position.clone());
+    const relative = panelWorldPosition.sub(game.player.group.position);
+    return {
+      panelsVisible: game.state.receiverPanelsVisible,
+      visibleCount: game.environment.receiverPanels.filter((item) => item.visible).length,
+      relative: { x: relative.x, y: relative.y, z: relative.z }
+    };
+  });
+}
+
+async function checkToggleBorders(page, expected, name) {
+  const state = await page.evaluate(() => {
+    const { document, getComputedStyle } = globalThis;
+    const gi = document.querySelector('[data-gi-toggle]');
+    const ddgi = document.querySelector('[data-ddgi-toggle]');
+    const panels = document.querySelector('[data-panels-toggle]');
+    return {
+      giActive: gi?.classList.contains('is-active') ?? false,
+      ddgiActive: ddgi?.classList.contains('is-active') ?? false,
+      panelsActive: panels?.classList.contains('is-active') ?? false,
+      giBorder: gi ? getComputedStyle(gi).borderColor : '',
+      ddgiBorder: ddgi ? getComputedStyle(ddgi).borderColor : '',
+      panelsBorder: panels ? getComputedStyle(panels).borderColor : ''
+    };
+  });
+
+  return {
+    name,
+    passed: state.giActive === expected.gi && state.ddgiActive === expected.ddgi && state.panelsActive === expected.panels,
+    detail: `GI=${state.giActive} ${state.giBorder}, DDGI=${state.ddgiActive} ${state.ddgiBorder}, Panels=${state.panelsActive} ${state.panelsBorder}`
   };
 }
 
@@ -640,47 +750,19 @@ async function playerProjectileCount(page) {
   return page.evaluate(() => window['__RIFT_AVIATOR__'].projectiles.items.filter((projectile) => projectile.owner === 'player').length);
 }
 
-async function captureCanvasSignature(page) {
-  return page.locator('canvas').evaluate((canvas) => {
+async function captureGIState(page) {
+  return page.evaluate(() => {
     const game = window['__RIFT_AVIATOR__'];
     game.ddgi.update(0, game.state);
-    game.player.update(0, game.input, game.state);
     game.render();
-
-    const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
-    if (!gl) return { hash: 0, samples: 0, luma: 0 };
-    const width = Math.max(1, Math.floor(canvas.width / 5));
-    const height = Math.max(1, Math.floor(canvas.height / 5));
-    const image = new Uint8Array(width * height * 4);
-    gl.readPixels(
-      Math.floor(canvas.width / 2 - width / 2),
-      Math.floor(canvas.height / 2 - height / 2),
-      width,
-      height,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      image
-    );
-    const step = Math.max(4, Math.floor(image.length / 4 / 6000) * 4);
-    let hash = 2_166_136_261;
-    let luma = 0;
-    let samples = 0;
-    for (let index = 0; index < image.length; index += step) {
-      const red = image[index];
-      const green = image[index + 1];
-      const blue = image[index + 2];
-      hash = Math.imul(hash ^ red, 16_777_619);
-      hash = Math.imul(hash ^ green, 16_777_619);
-      hash = Math.imul(hash ^ blue, 16_777_619);
-      luma += red * 0.2126 + green * 0.7152 + blue * 0.0722;
-      samples += 1;
-    }
-    return { hash: hash >>> 0, samples, luma: Math.round(luma / Math.max(1, samples)) };
+    return {
+      enabled: game.ddgi.uniforms.ddgiEnabled.value,
+      probeCount: game.ddgi.probes.length,
+      patchedMaterials: game.ddgi.materials.size,
+      receiverPanels: game.environment.receiverPanels?.length ?? 0,
+      visibleReceiverPanels: game.environment.receiverPanels?.filter((panel) => panel.visible).length ?? 0
+    };
   });
-}
-
-function formatSignature(signature) {
-  return `hash=${signature.hash}, luma=${signature.luma}, samples=${signature.samples}`;
 }
 
 function formatChecks(checks) {

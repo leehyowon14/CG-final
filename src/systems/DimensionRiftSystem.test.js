@@ -15,6 +15,7 @@ describe('DimensionRiftSystem', () => {
     expect(rifts.items[0].opening.children.filter((child) => child.name === 'DimensionRiftCrackSegment').length).toBeGreaterThan(10);
     expect(rifts.items[0].opening.children.filter((child) => child.name === 'DimensionRiftEdgeShard').length).toBeGreaterThan(10);
     expect(rifts.items[0].shards.length).toBeGreaterThan(20);
+    expect(rifts.items[0].shards.filter((shard) => shard.mesh.name === 'DimensionRiftGIReceiverShard').length).toBeGreaterThan(6);
     expect(rifts.items[0].shards.every((shard) => shard.mesh.material.isMeshStandardMaterial)).toBe(true);
     expect(rifts.items[0].shards.every((shard) => shard.mesh.material.emissiveIntensity === 0)).toBe(true);
   });

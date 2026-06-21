@@ -23,7 +23,13 @@ export class HUD {
         <div class="metric metric--score"><span>Score</span><b data-score>0</b></div>
         <div class="metric"><span>Best</span><b data-best>0</b></div>
         <div class="metric"><span>Kills</span><b data-kills>0</b></div>
-        <div class="toggles"><span>V View</span><span>G DDGI</span><span>H GI</span><span>R Restart</span></div>
+        <div class="toggles">
+          <span>V View</span>
+          <span data-ddgi-toggle>G DDGI</span>
+          <span data-gi-toggle>H GI</span>
+          <span data-panels-toggle>P Panels</span>
+          <span>R Restart</span>
+        </div>
       </section>
       <div class="game-over" data-game-over>
         <h1>Dimension Collapse</h1>
@@ -43,6 +49,9 @@ export class HUD {
       score: this.find('[data-score]'),
       best: this.find('[data-best]'),
       kills: this.find('[data-kills]'),
+      ddgiToggle: this.find('[data-ddgi-toggle]'),
+      giToggle: this.find('[data-gi-toggle]'),
+      panelsToggle: this.find('[data-panels-toggle]'),
       gameOver: this.find('[data-game-over]')
     };
   }
@@ -71,6 +80,12 @@ export class HUD {
     this.refs.score.textContent = `${Math.floor(this.state.score)}`;
     this.refs.best.textContent = `${this.state.bestScore}`;
     this.refs.kills.textContent = `${this.state.kills}`;
+    this.refs.ddgiToggle.classList.toggle('is-active', this.state.ddgiDebug);
+    this.refs.ddgiToggle.setAttribute('aria-pressed', `${this.state.ddgiDebug}`);
+    this.refs.giToggle.classList.toggle('is-active', this.state.giEnabled);
+    this.refs.giToggle.setAttribute('aria-pressed', `${this.state.giEnabled}`);
+    this.refs.panelsToggle.classList.toggle('is-active', this.state.receiverPanelsVisible);
+    this.refs.panelsToggle.setAttribute('aria-pressed', `${this.state.receiverPanelsVisible}`);
     this.refs.gameOver.classList.toggle('is-visible', this.state.gameOver);
   }
 

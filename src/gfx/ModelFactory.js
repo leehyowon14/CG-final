@@ -263,12 +263,12 @@ export function createEnemyModel(type) {
   const hull = new THREE.MeshStandardMaterial({
     color: '#5d241b',
     emissive: '#3b120c',
-    emissiveIntensity: 0.55,
-    roughness: 0.38,
-    metalness: 0.52,
+    emissiveIntensity: 0.28,
+    roughness: 0.52,
+    metalness: 0.28,
     flatShading: true
   });
-  const glow = createEnergyMaterial(baseColor, { emissiveIntensity: 1.65 });
+  const glow = createEnergyMaterial(baseColor, { emissiveIntensity: 1.1, roughness: 0.45, metalness: 0.12 });
 
   if (type === 'striker') {
     const spike = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.8, 5), hull);
@@ -295,12 +295,12 @@ export function createMiniBossModel() {
   const hull = new THREE.MeshStandardMaterial({
     color: '#55211a',
     emissive: '#3d100b',
-    emissiveIntensity: 0.68,
-    roughness: 0.38,
-    metalness: 0.6,
+    emissiveIntensity: 0.34,
+    roughness: 0.56,
+    metalness: 0.32,
     flatShading: true
   });
-  const glow = createEnergyMaterial('#ff5b35', { emissiveIntensity: 2 });
+  const glow = createEnergyMaterial('#ff5b35', { emissiveIntensity: 1.35, roughness: 0.42, metalness: 0.12 });
 
   const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 1), glow);
   const left = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.45, 0.9), hull);
@@ -319,19 +319,19 @@ export function createObstacleModel(kind) {
   if (kind === 'wall') {
     const wall = new THREE.Mesh(
       new THREE.BoxGeometry(0.8, 2.8, 4.2),
-      dimensionMaterial('phase', { transparent: true, opacity: 0.68, emissiveIntensity: 1.35 })
+      dimensionMaterial('phase', { transparent: true, opacity: 0.72, emissiveIntensity: 0.35, roughness: 0.68, metalness: 0.08 })
     );
     wall.castShadow = true;
     return wall;
   }
 
   if (kind === 'mine') {
-    const mine = new THREE.Mesh(new THREE.IcosahedronGeometry(0.7, 0), dimensionMaterial('phase', { emissiveIntensity: 1.5 }));
+    const mine = new THREE.Mesh(new THREE.IcosahedronGeometry(0.7, 0), dimensionMaterial('phase', { emissiveIntensity: 0.45, roughness: 0.62, metalness: 0.12 }));
     mine.castShadow = true;
     return mine;
   }
 
-  const crystal = new THREE.Mesh(new THREE.ConeGeometry(0.75, 2.2, 5), dimensionMaterial('phase', { emissiveIntensity: 1.6 }));
+  const crystal = new THREE.Mesh(new THREE.ConeGeometry(0.75, 2.2, 5), dimensionMaterial('phase', { emissiveIntensity: 0.5, roughness: 0.58, metalness: 0.1 }));
   crystal.castShadow = true;
   return crystal;
 }

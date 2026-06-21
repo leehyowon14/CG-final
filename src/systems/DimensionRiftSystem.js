@@ -4,6 +4,7 @@ import { disposeObject3D } from '../utils/dispose.js';
 
 const RIFT_LIFETIME = 1.15;
 const SHARD_COUNT = 26;
+const GI_RECEIVER_SHARD_COUNT = 10;
 const EDGE_SHARD_COUNT = 18;
 const RIFT_OFFSET = new THREE.Vector3(0, 0.85, 7.2);
 const PASS_THROUGH_DEPTH = 1.8;
@@ -32,6 +33,11 @@ export class DimensionRiftSystem {
     const shards = [];
     for (let index = 0; index < SHARD_COUNT; index += 1) {
       const shard = this.createGlassShard(index, toColor);
+      group.add(shard.mesh);
+      shards.push(shard);
+    }
+    for (let index = 0; index < GI_RECEIVER_SHARD_COUNT; index += 1) {
+      const shard = this.createGIReceiverShard(index, toColor);
       group.add(shard.mesh);
       shards.push(shard);
     }
@@ -171,6 +177,44 @@ export class DimensionRiftSystem {
       mesh,
       velocity: new THREE.Vector3(Math.cos(angle) * (0.85 + Math.random() * 1.6), Math.sin(angle) * (0.55 + Math.random() * 1.1), -1.35),
       angularVelocity: new THREE.Vector3(Math.random() * 2.6, Math.random() * 2.2, (Math.random() - 0.5) * 4.8),
+      baseOpacity: material.opacity,
+      baseScale: mesh.scale.x
+    };
+  }
+
+  createGIReceiverShard(index, color) {
+    const angle = (Math.PI * 2 * index) / GI_RECEIVER_SHARD_COUNT + (Math.random() - 0.5) * 0.28;
+    const radius = 0.95 + Math.random() * 1.25;
+    const geometry = createShardGeometry(0.82 + Math.random() * 0.55, 0.86 + Math.random() * 0.72);
+    const material = new THREE.MeshStandardMaterial({
+      name: 'DimensionRiftGIReceiver',
+      color: new THREE.Color('#e8f2f4').lerp(color, 0.12),
+      emissive: '#000000',
+      emissiveIntensity: 0,
+      roughness: 0.68,
+      metalness: 0.08,
+      transparent: true,
+      opacity: 0.78,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      envMapIntensity: 0.24
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = 'DimensionRiftGIReceiverShard';
+    mesh.position.set(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius * (0.68 + Math.random() * 0.18),
+      Math.random() * 0.46 - 0.18
+    );
+    mesh.rotation.set(Math.random() * 0.6, Math.random() * 0.8, angle + Math.random() * 0.7);
+    mesh.scale.setScalar(0.74 + Math.random() * 0.58);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    return {
+      mesh,
+      velocity: new THREE.Vector3(Math.cos(angle) * (0.32 + Math.random() * 0.72), Math.sin(angle) * (0.25 + Math.random() * 0.58), -0.9),
+      angularVelocity: new THREE.Vector3(Math.random() * 1.1, Math.random() * 1.3, (Math.random() - 0.5) * 2.4),
       baseOpacity: material.opacity,
       baseScale: mesh.scale.x
     };

@@ -49,7 +49,7 @@ export class DDGIManager {
 
   createProbes() {
     const { bounds, resolution } = this.config;
-    const debugGeometry = new THREE.SphereGeometry(0.11, 10, 8);
+    const debugGeometry = new THREE.SphereGeometry(0.075, 8, 6);
     for (let z = 0; z < resolution.z; z += 1) {
       for (let y = 0; y < resolution.y; y += 1) {
         for (let x = 0; x < resolution.x; x += 1) {
@@ -162,7 +162,8 @@ vec3 sampleDDGIIrradiance(vec3 worldPosition) {
         .replace(
           '#include <lights_fragment_begin>',
           `#include <lights_fragment_begin>
-reflectedLight.indirectDiffuse += diffuseColor.rgb * sampleDDGIIrradiance(vDDGIWorldPosition) * ddgiEnabled * ddgiIntensity;`
+vec3 ddgiBounce = sampleDDGIIrradiance(vDDGIWorldPosition);
+reflectedLight.indirectDiffuse += diffuseColor.rgb * ddgiBounce * ddgiEnabled * ddgiIntensity;`
         );
       material.userData.ddgiShader = shader;
     };
@@ -188,10 +189,10 @@ reflectedLight.indirectDiffuse += diffuseColor.rgb * sampleDDGIIrradiance(vDDGIW
       const laneFactor = 1 - THREE.MathUtils.clamp(Math.abs(probe.position.x) / GAME_CONFIG.bounds.x, 0, 1) * 0.35;
       const wave = 0.5 + Math.sin(state.elapsed * 1.35 + index * 0.41) * 0.5;
       const visibility = state.giEnabled
-        ? THREE.MathUtils.clamp(0.38 + heightFactor * 0.22 + laneFactor * 0.2, 0, 1)
+        ? THREE.MathUtils.clamp(0.42 + heightFactor * 0.18 + laneFactor * 0.16, 0, 0.86)
         : 0;
-      const baseStrength = state.giEnabled ? (0.32 + wave * 0.12) * laneFactor + probe.flash : 0;
-      probe.color.copy(dimensionColor).lerp(WHITE, 0.18 + heightFactor * 0.15);
+      const baseStrength = state.giEnabled ? (0.24 + wave * 0.08) * laneFactor + probe.flash * 0.62 : 0;
+      probe.color.copy(dimensionColor).lerp(WHITE, 0.24 + heightFactor * 0.16);
       probe.irradiance.copy(probe.color).multiplyScalar(baseStrength);
       probe.visibility = visibility;
       probe.mesh.material.color.copy(probe.irradiance).lerp(probe.color, 0.35);

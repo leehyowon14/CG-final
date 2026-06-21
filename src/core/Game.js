@@ -84,6 +84,10 @@ export class Game {
       this.state.giEnabled = !this.state.giEnabled;
     }
 
+    if (this.input.consume('KeyP')) {
+      this.state.receiverPanelsVisible = !this.state.receiverPanelsVisible;
+    }
+
     if (this.input.consume('KeyV')) {
       this.cameraRig.cycleView();
     }
@@ -135,7 +139,7 @@ export class Game {
     }
 
     this.updateFogForCameraMode();
-    this.environment.update(delta, this.state.dimension, worldTravelSpeed);
+    this.environment.update(delta, this.state.dimension, worldTravelSpeed, this.player.group.position, this.state.receiverPanelsVisible);
     this.environmentMap.update(this.state.dimension);
     this.lights.update(this.state.dimension);
     this.ddgi.update(delta, this.state);

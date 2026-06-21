@@ -5,12 +5,15 @@ export class DimensionEnvironment {
   constructor(scene) {
     this.scene = scene;
     this.group = new THREE.Group();
+    this.panelBaseColor = new THREE.Color('#91a7aa');
+    this.panelWorldPosition = new THREE.Vector3();
     this.tunnel = this.createTunnel();
     this.grid = this.createGrid();
+    this.receiverPanels = this.createReceiverPanels();
     this.starLayers = this.createStarLayers();
     this.dustField = this.createDustField();
     this.scroll = 0;
-    this.group.add(this.tunnel, this.grid, ...this.starLayers, this.dustField);
+    this.group.add(this.tunnel, this.grid, ...this.receiverPanels, ...this.starLayers, this.dustField);
     scene.add(this.group);
   }
 
@@ -37,6 +40,45 @@ export class DimensionEnvironment {
     grid.material.opacity = 0.38;
     grid.material.depthWrite = false;
     return grid;
+  }
+
+  createReceiverPanels() {
+    const panels = [];
+    const geometry = new THREE.BoxGeometry(1.0, 0.06, 0.72);
+    const material = new THREE.MeshStandardMaterial({
+      name: 'DDGIReceiverPanel',
+      color: this.panelBaseColor,
+      emissive: '#000000',
+      emissiveIntensity: 0,
+      roughness: 0.72,
+      metalness: 0.08,
+      envMapIntensity: 0.12
+    });
+    const placements = [
+      [-4.8, 0.18, 3.2],
+      [4.6, 0.72, 4.4],
+      [-2.6, 1.05, 6.1],
+      [3.2, 0.22, 7.4],
+      [-5.6, 1.25, 8.8],
+      [5.4, 0.92, 2.1],
+      [-1.0, 0.35, 5.2],
+      [1.4, 1.18, 9.4]
+    ];
+
+    placements.forEach(([x, y, z], index) => {
+      const panel = new THREE.Mesh(geometry, material);
+      panel.name = 'DDGIReceiverPanel';
+      panel.visible = false;
+      panel.position.set(x, y, z);
+      panel.rotation.set((index % 3) * 0.18, (index % 5) * 0.35, (index % 2 === 0 ? 1 : -1) * 0.24);
+      panel.castShadow = true;
+      panel.receiveShadow = true;
+      panel.userData.offset = new THREE.Vector3(x, y, z);
+      panel.userData.baseRotationY = panel.rotation.y;
+      panels.push(panel);
+    });
+
+    return panels;
   }
 
   createStarLayers() {
@@ -76,7 +118,7 @@ export class DimensionEnvironment {
     return points;
   }
 
-  update(delta, dimensionId, worldTravelSpeed = 0) {
+  update(delta, dimensionId, worldTravelSpeed = 0, playerPosition = new THREE.Vector3(0, 0, -6), receiverPanelsVisible = false) {
     const dimension = DIMENSIONS[dimensionId];
     const scrollSpeed = GAME_CONFIG.world.scrollSpeed + worldTravelSpeed;
     this.scroll += delta * scrollSpeed;
@@ -89,6 +131,15 @@ export class DimensionEnvironment {
     this.grid.position.z = 4 - (this.scroll % 2);
     this.tunnel.position.z = 4 - (this.scroll % 3) * 0.35;
     this.group.rotation.z += delta * 0.08;
+    this.group.updateMatrixWorld(true);
+    const panelColor = this.panelBaseColor.clone().lerp(dimension.color, 0.04);
+    for (const panel of this.receiverPanels) {
+      panel.visible = receiverPanelsVisible;
+      panel.material.color.copy(panelColor);
+      this.panelWorldPosition.copy(playerPosition).add(panel.userData.offset);
+      panel.position.copy(this.group.worldToLocal(this.panelWorldPosition));
+      panel.rotation.y = panel.userData.baseRotationY + Math.sin(this.scroll * 0.12 + panel.userData.offset.x) * 0.08;
+    }
     for (const field of [...this.starLayers, this.dustField]) {
       field.material.color.copy(new THREE.Color('#d8f6ff').lerp(dimension.color, 0.2));
       const positions = field.geometry.attributes.position;

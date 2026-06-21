@@ -14,6 +14,7 @@ export class GameState {
     this.warning = '';
     this.giEnabled = true;
     this.ddgiDebug = false;
+    this.receiverPanelsVisible = false;
     this.dimensionStacks = GAME_CONFIG.dimension.maxStacks;
     this.dimensionRecharge = 0;
     this.stabilityTime = 0;
@@ -38,6 +39,7 @@ export class GameState {
     this.warning = '';
     this.giEnabled = true;
     this.ddgiDebug = false;
+    this.receiverPanelsVisible = false;
     this.dimensionStacks = GAME_CONFIG.dimension.maxStacks;
     this.dimensionRecharge = 0;
     this.stabilityTime = 0;

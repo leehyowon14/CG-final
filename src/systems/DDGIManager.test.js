@@ -17,6 +17,7 @@ describe('DDGIManager', () => {
     const expectedProbeCount =
       GAME_CONFIG.ddgi.resolution.x * GAME_CONFIG.ddgi.resolution.y * GAME_CONFIG.ddgi.resolution.z;
     expect(gi.probes).toHaveLength(expectedProbeCount);
+    expect(expectedProbeCount).toBeGreaterThan(300);
     expect(gi.texture.image.width).toBe(expectedProbeCount);
     expect(gi.debugGroup.visible).toBe(true);
     expect(gi.sampleAt(new THREE.Vector3(0, 0, 0))).toBeInstanceOf(THREE.Color);

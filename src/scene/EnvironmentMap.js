@@ -31,7 +31,7 @@ export class EnvironmentMap {
     const pmrem = this.pmremGenerator.fromEquirectangular(texture);
     this.environmentTexture = pmrem.texture;
     this.scene.environment = this.environmentTexture;
-    this.scene.environmentIntensity = 0.82;
+    this.scene.environmentIntensity = 0.72;
 
     this.sky = this.createSky(texture);
     this.scene.add(this.sky);
@@ -44,7 +44,7 @@ export class EnvironmentMap {
         envMap: { value: texture },
         tint: { value: this.tint },
         tintStrength: { value: 0.25 },
-        exposure: { value: 0.94 }
+      exposure: { value: 0.88 }
       },
       vertexShader: `
         varying vec3 vDirection;
@@ -94,7 +94,7 @@ export class EnvironmentMap {
     }
 
     if ('environmentIntensity' in this.scene) {
-      this.scene.environmentIntensity = dimensionId === 'combat' ? 1.26 : dimensionId === 'phase' ? 1.2 : 1.12;
+      this.scene.environmentIntensity = dimensionId === 'combat' ? 0.92 : dimensionId === 'phase' ? 0.88 : 0.82;
     }
   }
 
