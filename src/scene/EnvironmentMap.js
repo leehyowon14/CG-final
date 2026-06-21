@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 import { DIMENSIONS } from '../core/Constants.js';
 
-const ENV_HDR_PATH = '/CG-final-game/assets/env/HDR_blue_local_star_and_nebulae.hdr';
+const ENV_HDR_PATH = `${import.meta.env.BASE_URL}assets/env/HDR_blue_local_star_and_nebulae.hdr`;
 
 const FILTER_STRENGTH = {
   stability: 0.14,

@@ -4,7 +4,7 @@ import { chromium } from 'playwright-core';
 
 const host = '127.0.0.1';
 const port = 4173;
-const baseUrl = `http://${host}:${port}/CG-final-game/`;
+const baseUrl = `http://${host}:${port}/CG-final/`;
 const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const screenshotDir = 'report/screenshots';
 const reportPath = 'report/10_verification.md';
