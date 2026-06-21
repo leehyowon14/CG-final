@@ -13,6 +13,40 @@ import {
 const PLAYER_MODEL_BASE_PATH = `${import.meta.env.BASE_URL}assets/models/player/`;
 const PLAYER_MODEL_OBJ = 'kenney_craft_racer.obj';
 const PLAYER_MODEL_MTL = 'kenney_craft_racer.mtl';
+const KENNEY_MATERIAL_PALETTE = {
+  metal: {
+    color: '#3e98ad',
+    emissive: '#031016',
+    emissiveIntensity: 0.08,
+    roughness: 0.4,
+    metalness: 0.42,
+    envMapIntensity: 1.05
+  },
+  metalDark: {
+    color: '#14586a',
+    emissive: '#01080b',
+    emissiveIntensity: 0.06,
+    roughness: 0.42,
+    metalness: 0.46,
+    envMapIntensity: 1
+  },
+  dark: {
+    color: '#071923',
+    emissive: '#01080b',
+    emissiveIntensity: 0.05,
+    roughness: 0.5,
+    metalness: 0.38,
+    envMapIntensity: 0.9
+  },
+  metalRed: {
+    color: '#ff6b2a',
+    emissive: '#3a0b02',
+    emissiveIntensity: 0.28,
+    roughness: 0.36,
+    metalness: 0.3,
+    envMapIntensity: 1.05
+  }
+};
 
 export function createPlayerModel() {
   const group = new THREE.Group();
@@ -150,15 +184,24 @@ function prepareKenneyShip(object) {
 
 function enhanceKenneyMaterial(material) {
   const source = Array.isArray(material) ? material[0] : material;
-  const color = source?.color?.clone?.() ?? new THREE.Color('#d7deec');
-  return new THREE.MeshStandardMaterial({
-    name: source?.name ?? 'kenneyHull',
-    color,
+  const name = source?.name ?? 'kenneyHull';
+  const palette = KENNEY_MATERIAL_PALETTE[name] ?? {
+    color: source?.color?.clone?.() ?? new THREE.Color('#d7deec'),
     emissive: '#08151c',
     emissiveIntensity: 0.12,
     roughness: 0.36,
     metalness: 0.42,
     envMapIntensity: 1.4
+  };
+
+  return new THREE.MeshStandardMaterial({
+    name,
+    color: palette.color,
+    emissive: palette.emissive,
+    emissiveIntensity: palette.emissiveIntensity,
+    roughness: palette.roughness,
+    metalness: palette.metalness,
+    envMapIntensity: palette.envMapIntensity
   });
 }
 
