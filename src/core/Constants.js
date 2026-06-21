@@ -33,7 +33,7 @@ export const DIMENSIONS = {
     id: 'phase',
     key: '3',
     label: '위상',
-    description: '회피와 수급: 장애물 밀도가 높고 ammo cell과 score relic을 챙기는 차원이다.',
+    description: '회피와 수급: 장애물 밀도가 높고 ammo cell을 챙기며 회피 점수를 노리는 차원이다.',
     shortLabel: 'PHASE',
     color: new THREE.Color('#a46cff'),
     darkColor: new THREE.Color('#20123c'),
