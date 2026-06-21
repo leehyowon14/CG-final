@@ -1,11 +1,10 @@
 # Asset Credits
 
-외부 에셋은 CC0 또는 명확한 무료 라이선스가 확인된 자료만 사용한다. 현재 게임의 플레이어 기체와 ENV 조명/배경에는 외부 에셋을 사용하고, 적, 장애물, 아이템은 Three.js geometry로 직접 생성한다.
+외부 에셋은 CC0 또는 명확한 무료 라이선스가 확인된 자료만 사용한다. 현재 게임은 ENV 조명/배경에만 외부 에셋을 사용하고, 플레이어 기체, 적, 장애물, 아이템은 Three.js geometry로 직접 생성한다.
 
 | 에셋 이름 | 로컬 경로 | 출처 | 라이선스 | 사용 위치 | 수정 여부 |
 |---|---|---|---|---|---|
-| Kenney Space Kit Craft Racer | `public/assets/models/player/kenney_craft_racer.obj`, `public/assets/models/player/kenney_craft_racer.mtl` | Kenney Space Kit, https://kenney.nl/assets/space-kit | Creative Commons CC0 | 플레이어 기체 | OBJ/MTL 원본 사용, 런타임 scale/center/PBR material 보강, 기존 procedural engine/core overlay 결합 |
-| Procedural Player Fighter Fallback | `src/gfx/ModelFactory.js` | 직접 제작 | Original project asset | 플레이어 기체 로딩 fallback, 엔진/코어 overlay | Three.js geometry 조합 |
+| Procedural Player Fighter | `src/gfx/ModelFactory.js` | 직접 제작 | Original project asset | 플레이어 기체, 엔진/코어 overlay | Three.js geometry 조합 |
 | Procedural Enemy Set | `src/gfx/ModelFactory.js` | 직접 제작 | Original project asset | Drone, Striker, Gunner, Mini Boss | Three.js geometry 조합 |
 | Procedural Rift Obstacles | `src/gfx/ModelFactory.js` | 직접 제작 | Original project asset | Rift Crystal, Phase Wall, Rift Mine | Three.js geometry 조합 |
 | Procedural Energy Pickups | `src/gfx/ModelFactory.js` | 직접 제작 | Original project asset | Health, Shield, Ammo | Three.js geometry 조합 |

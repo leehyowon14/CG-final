@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import {
   createCanopyMaterial,
   createDarkHullMaterial,
@@ -10,15 +8,11 @@ import {
   dimensionMaterial
 } from './Materials.js';
 
-const PLAYER_MODEL_BASE_PATH = '/CG-final-game/assets/models/player/';
-const PLAYER_MODEL_OBJ = 'kenney_craft_racer.obj';
-const PLAYER_MODEL_MTL = 'kenney_craft_racer.mtl';
-
 export function createPlayerModel() {
   const group = new THREE.Group();
-  const fallback = new THREE.Group();
+  const fighter = new THREE.Group();
   const effects = new THREE.Group();
-  group.add(fallback, effects);
+  group.add(fighter, effects);
 
   const hull = createHullMaterial();
   const darkHull = createDarkHullMaterial();
@@ -33,43 +27,43 @@ export function createPlayerModel() {
   body.rotation.x = Math.PI / 2;
   body.scale.set(0.95, 0.82, 1.08);
   body.castShadow = true;
-  fallback.add(body);
+  fighter.add(body);
 
   const nose = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.78, 28), hull);
   nose.rotation.x = Math.PI / 2;
   nose.position.z = 1.08;
   nose.castShadow = true;
-  fallback.add(nose);
+  fighter.add(nose);
 
   const belly = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.16, 1.55), darkHull);
   belly.position.set(0, -0.22, -0.18);
-  fallback.add(belly);
+  fighter.add(belly);
 
   const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.34, 24, 12), canopyMaterial);
   canopy.scale.set(0.72, 0.34, 1.05);
   canopy.position.set(0, 0.25, 0.35);
-  fallback.add(canopy);
-  fallback.add(createCanopyFrame(panelMaterial));
+  fighter.add(canopy);
+  fighter.add(createCanopyFrame(panelMaterial));
 
   const leftWing = createPlayerWing(-1, hull);
   const rightWing = createPlayerWing(1, hull);
-  fallback.add(leftWing, rightWing);
-  fallback.add(createWingDetails(-1, panelMaterial), createWingDetails(1, panelMaterial));
+  fighter.add(leftWing, rightWing);
+  fighter.add(createWingDetails(-1, panelMaterial), createWingDetails(1, panelMaterial));
 
   const leftStabilizer = createPlayerStabilizer(-1, darkHull);
   const rightStabilizer = createPlayerStabilizer(1, darkHull);
-  fallback.add(leftStabilizer, rightStabilizer);
+  fighter.add(leftStabilizer, rightStabilizer);
 
   for (const x of [-0.32, 0.32]) {
     const engine = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.66, 24), darkHull);
     engine.rotation.x = Math.PI / 2;
     engine.position.set(x, -0.04, -1.1);
     engine.castShadow = true;
-    fallback.add(engine);
+    fighter.add(engine);
 
     const nozzle = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 8, 24), panelMaterial);
     nozzle.position.set(x, -0.04, -1.45);
-    fallback.add(nozzle);
+    fighter.add(nozzle);
 
     const plume = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.72, 24), engineGlow);
     plume.rotation.x = -Math.PI / 2;
@@ -77,7 +71,7 @@ export function createPlayerModel() {
     effects.add(plume);
   }
 
-  fallback.add(createFuselagePanels(panelMaterial), createNoseSensor(warmLight));
+  fighter.add(createFuselagePanels(panelMaterial), createNoseSensor(warmLight));
 
   const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.34, 1), energy);
   core.position.set(0, 0.08, -0.48);
@@ -91,75 +85,12 @@ export function createPlayerModel() {
   shield.visible = false;
   effects.add(shield);
 
-  loadKenneyPlayerModel(group, fallback);
-
   return {
     group,
     emissiveMaterials: [energy, engineGlow],
     core,
     shield
   };
-}
-
-function loadKenneyPlayerModel(group, fallback) {
-  const materialLoader = new MTLLoader();
-  materialLoader.setPath(PLAYER_MODEL_BASE_PATH);
-  materialLoader.load(
-    PLAYER_MODEL_MTL,
-    (materials) => {
-      materials.preload();
-      const objectLoader = new OBJLoader();
-      objectLoader.setMaterials(materials);
-      objectLoader.setPath(PLAYER_MODEL_BASE_PATH);
-      objectLoader.load(
-        PLAYER_MODEL_OBJ,
-        (object) => {
-          const ship = prepareKenneyShip(object);
-          group.add(ship);
-          fallback.visible = false;
-        },
-        undefined,
-        () => {}
-      );
-    },
-    undefined,
-    () => {}
-  );
-}
-
-function prepareKenneyShip(object) {
-  const ship = new THREE.Group();
-  object.name = 'KenneyCraftRacer';
-
-  const bounds = new THREE.Box3().setFromObject(object);
-  const center = bounds.getCenter(new THREE.Vector3());
-  object.position.sub(center);
-  object.scale.setScalar(1.28);
-  object.position.y -= 0.12;
-
-  object.traverse((child) => {
-    if (!child.isMesh) return;
-    child.castShadow = true;
-    child.receiveShadow = true;
-    child.material = enhanceKenneyMaterial(child.material);
-  });
-
-  ship.add(object);
-  return ship;
-}
-
-function enhanceKenneyMaterial(material) {
-  const source = Array.isArray(material) ? material[0] : material;
-  const color = source?.color?.clone?.() ?? new THREE.Color('#d7deec');
-  return new THREE.MeshStandardMaterial({
-    name: source?.name ?? 'kenneyHull',
-    color,
-    emissive: '#08151c',
-    emissiveIntensity: 0.12,
-    roughness: 0.36,
-    metalness: 0.42,
-    envMapIntensity: 1.4
-  });
 }
 
 function createPlayerWing(side, material) {
